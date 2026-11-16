@@ -1,0 +1,5 @@
+package-as: GuildOS_Unbroken
+
+ignore:
+  - .gitignore
+  - .pkgmeta
