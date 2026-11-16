@@ -1,5 +1,8 @@
 package-as: GuildOS_Unbroken
 
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
 ignore:
-  - .gitignore
-  - .pkgmeta
+  - dist

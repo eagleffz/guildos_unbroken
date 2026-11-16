@@ -1,5 +1,8 @@
--- The "Orders" tab in the Guild OS window, built with Guild OS's own UI helpers, plus /gco.
--- Compact: the form is one line, filters and options a second, each order a two-line row.
+-- The marketplace tab in the Guild OS window, with two halves: "Looking for" (this file: crafting
+-- orders, skilling calls and plain requests for items or services, in one list and one form) and
+-- "Offering" (MarketUI.lua). Built with Guild OS's own UI helpers, plus /gco.
+-- Compact: the form is one line, filters and options a second, each entry a two-line row.
+-- Under the hood orders and requests stay apart (own records, own sync): only the screen joins them.
 local _, ns = ...
 local L = ns.L
 local GOS = GuildOS
@@ -66,7 +69,44 @@ local function Matches(o, filter, me)
     if o.sk then return ns.HaveCount(o) > 0 end -- a skilling call I could send something for
     return ns.ICanCraft(o)
   end
+  if filter == "items" then return o.it ~= nil or o.cat ~= nil end
+  if filter == "services" then return o.it == nil and o.cat == nil end
   if filter == "mine" then return o.by == me or o.acc == me end
+end
+
+-- a plain request (the market's "Suche" record) in the same list
+local function SeekMatches(o, filter, me, mine)
+  if not ns.OfferLive(o) then return false end
+  if filter == "active" then return true end
+  if filter == "forme" then
+    if o.by == me or mine then return false end
+    return ns.OfferHave(o) > 0 or ns.SeekForMe(o)
+  end
+  if filter == "items" then return o.it ~= nil end
+  if filter == "services" then return o.it == nil end
+  if filter == "mine" then return o.by == me or mine end
+end
+
+-- an item a recipe makes: such a request becomes a crafting order (take it, deliver it)
+local function Craftable(it)
+  if not it then return false end
+  local dir = GOS.ProfDirectory
+  if dir and dir.ItemRecipes then
+    local ok, list = pcall(dir.ItemRecipes, it)
+    if ok and type(list) == "table" and #list > 0 then return true end
+  end
+  return ns.Crafters({ it = it }) ~= nil
+end
+
+-- the item a typed text means (link, id, a listed or cached name), or nil
+local function ResolveItem(txt)
+  txt = strtrim(txt or "")
+  local it = tonumber(txt:match("item:(%d+)")) or tonumber(txt:match("^%d+$"))
+  if it or txt == "" then return it end
+  it = ns.ExactItem and ns.ExactItem(txt)
+  if it then return it end
+  local _, link = GetItemInfo(txt)
+  return link and tonumber(link:match("item:(%d+)"))
 end
 
 -- the buttons a row offers: { { label, fn }, ... } (at most two)
@@ -94,6 +134,12 @@ local function Section(title)
 end
 
 local function ShowTooltip(row)
+  if row.seek then
+    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+    ns.OfferTooltip(GameTooltip, row.seek)
+    GameTooltip:Show()
+    return
+  end
   local o = row.order
   if not o then return end
   GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
@@ -169,7 +215,8 @@ function ns.BuildPanel(panel)
     end
   end
   local x = 8
-  for _, f in ipairs({ { "active", L.F_ACTIVE }, { "forme", L.F_FORME }, { "mine", L.F_MINE } }) do
+  for _, f in ipairs({ { "active", L.F_ACTIVE }, { "forme", L.F_FORME }, { "items", L.M_F_ITEMS },
+                       { "services", L.M_F_SERVICES }, { "mine", L.F_MINE } }) do
     local b = UI:CreateButton(panel, f[2], 60, BTN_H)
     b:SetPoint("TOPLEFT", x, -33)
     b:SetScript("OnClick", function() filter = f[1]; PaintFilters(); refresh() end)
@@ -219,12 +266,14 @@ function ns.BuildPanel(panel)
       local _, link = GetItemInfo(e.id)
       text = link or e.name
     end
-    picked = { id = e.id, cat = e.cat, text = text }
+    picked = { id = e.id, cat = e.cat, svc = e.svc, text = text }
     itemBox.quiet = true
     itemBox:SetText(text)
     itemBox.quiet = nil
     drop:Hide()
-    if e.cat then
+    if e.svc then
+      noteBox:SetFocus()
+    elseif e.cat then
       -- a group only makes sense as a skilling call
       skCheck.checkbox:SetChecked(true)
       noteBox:SetFocus()
@@ -262,6 +311,9 @@ function ns.BuildPanel(panel)
   local function ShowSuggestions(text)
     local list = {}
     if not text:find("|H", 1, true) then
+      if not skCheck.checkbox:GetChecked() then
+        for _, s in ipairs(ns.SuggestServices(text)) do list[#list + 1] = s end
+      end
       for _, gr in ipairs(ns.SuggestGroups(text, skCheck.checkbox:GetChecked())) do list[#list + 1] = gr end
       if #list < SUG_N then
         for _, e in ipairs(ns.Suggest(text, SUG_N - #list)) do list[#list + 1] = e end
@@ -271,9 +323,10 @@ function ns.BuildPanel(panel)
     for i, b in ipairs(sugBtns) do
       local e = list[i]
       if e then
-        b.icon:SetTexture(ns.ItemIcon({ it = e.id, cat = e.cat }))
-        b.name:SetText(e.cat and ("|cffffd100" .. e.name .. "|r") or e.name)
-        if e.cat then b.info:SetText("|cffb080ff" .. L.GROUP .. "|r")
+        b.icon:SetTexture(e.svc and e.icon or ns.ItemIcon({ it = e.id, cat = e.cat }))
+        b.name:SetText(e.cat and ("|cffffd100" .. e.name .. "|r") or e.svc and ("|cff80c0ff" .. e.name .. "|r") or e.name)
+        if e.svc then b.info:SetText("|cff888888" .. L.M_SERVICE .. "|r")
+        elseif e.cat then b.info:SetText("|cffb080ff" .. L.GROUP .. "|r")
         else b.info:SetText(e.crafters > 0 and ("|cff40ff40" .. L.SUG_CRAFTERS:format(e.crafters) .. "|r") or "") end
         b:Show()
       else
@@ -315,11 +368,24 @@ function ns.BuildPanel(panel)
   end
   ns.OnChanged(ns.InvalidateSuggestions)
 
+  -- One form for everything wanted: a skilling call (ticked, or a material group), a crafting order
+  -- (an item a recipe makes), else a plain request for an item or a service.
   local function Submit()
-    local still = picked and itemBox:GetText() == picked.text
-    local o = ns.CreateOrder(itemBox:GetText(), qtyBox:GetText(), noteBox:GetText(),
-      msCheck.checkbox:GetChecked(), still and picked.id or nil, skCheck.checkbox:GetChecked(),
-      still and picked.cat or nil)
+    local text = itemBox:GetText()
+    local still = picked and text == picked.text
+    local sk = skCheck.checkbox:GetChecked()
+    local cat = still and picked.cat or nil
+    local it = still and picked.id or nil
+    if not (sk or cat or ns.GroupByName(text)) and not (still and picked.svc) then
+      it = it or ResolveItem(text)
+    end
+    local o
+    if sk or cat or ns.GroupByName(text) or (it and Craftable(it)) then
+      o = ns.CreateOrder(text, qtyBox:GetText(), noteBox:GetText(),
+        msCheck.checkbox:GetChecked(), it, sk, cat)
+    else
+      o = ns.CreateOffer(text, qtyBox:GetText(), nil, noteBox:GetText(), it, true)
+    end
     if o then
       itemBox:SetText(""); noteBox:SetText(""); qtyBox:SetText("1")
       itemBox:ClearFocus(); noteBox:ClearFocus(); qtyBox:ClearFocus()
@@ -419,15 +485,40 @@ function ns.BuildPanel(panel)
     for _, o in pairs(g and g.orders or {}) do
       if not ns.OrderExpired(o) and Matches(o, filter, me) then list[#list + 1] = o end
     end
+    -- plain requests from the market records join the list (they count as "open")
+    local seeks = {}
+    local ms = ns.MarketStore and ns.MarketStore()
+    for _, o in pairs(ms and ms.offers or {}) do
+      if ns.OfferSeek(o) then
+        local wants, mine = ns.OfferWants(o)
+        if SeekMatches(o, filter, me, mine) then
+          seeks[o] = { wants, mine }
+          list[#list + 1] = o
+        end
+      end
+    end
+    local function rank(o) return seeks[o] and 1 or STATUS_ORDER[o.st] end
     table.sort(list, function(a, b)
-      if a.st ~= b.st then return STATUS_ORDER[a.st] < STATUS_ORDER[b.st] end
+      if rank(a) ~= rank(b) then return rank(a) < rank(b) end
       return (a.c or 0) > (b.c or 0)
     end)
 
     for i, o in ipairs(list) do
       local row = GetRow(i)
-      row.order = o
       if o.it then shownItems[o.it] = true end
+      local s = seeks[o]
+      if s then
+        row.order, row.seek = nil, o
+        row.icon.icon:SetTexture(ns.OfferIcon(o))
+        local title, meta = ns.OfferRowText(o, me, s[1], s[2])
+        row.title:SetText(title)
+        row.meta:SetText(meta)
+        local acts = ns.OfferActions(o, me, s[2])
+        FillButton(row.b1, acts[1], o)
+        FillButton(row.b2, acts[2], o)
+        row:Show()
+      else
+      row.order, row.seek = o, nil
       row.icon.icon:SetTexture(ns.ItemIcon(o))
       local item = ns.OrderText(o)
       if o.sk then
@@ -467,8 +558,9 @@ function ns.BuildPanel(panel)
       FillButton(row.b1, acts[1], o)
       FillButton(row.b2, acts[2], o)
       row:Show()
+      end
     end
-    for i = #list + 1, #rows do rows[i]:Hide(); rows[i].order = nil end
+    for i = #list + 1, #rows do rows[i]:Hide(); rows[i].order, rows[i].seek = nil, nil end
     empty:SetShown(#list == 0)
     content:SetHeight(math.max(1, #list * ROW_H))
   end
@@ -498,10 +590,84 @@ function ns.BuildPanel(panel)
   return refresh
 end
 
+---------------------------------------------------------------- the tab: two halves
+local SUB_H = 22
+local subs, subBtns, subRefresh = {}, {}, {}
+local current
+
+local function CountSub(key)
+  local me, n = ns.Me(), 0
+  if key == "seek" then
+    local g = ns.G()
+    for _, o in pairs(g and g.orders or {}) do
+      if not ns.OrderExpired(o) and not ns.Finished(o) then n = n + 1 end
+    end
+  end
+  local ms = ns.MarketStore and ns.MarketStore()
+  for _, o in pairs(ms and ms.offers or {}) do
+    if ns.OfferLive(o) and ns.OfferSeek(o) == (key == "seek") then n = n + 1 end
+  end
+  return n
+end
+
+local function PaintSubs()
+  for key, b in pairs(subBtns) do
+    local on = key == current
+    local col = on and C.gold or C.text
+    b.label:SetText((key == "seek" and L.M_F_SEEKS or L.M_F_OFFERS) .. "  |cff888888(" .. CountSub(key) .. ")|r")
+    b.baseLabelColor = { col.r, col.g, col.b }
+    b.label:SetTextColor(col.r, col.g, col.b)
+    if b.line then b.line:SetShown(on) end
+  end
+end
+
+-- show one half ("seek" or "offer"); remembered for the next time
+function ns.ShowSub(key)
+  if not subs[key] then
+    if ns.db then ns.db.settings.subTab = key end
+    return
+  end
+  current = key
+  if ns.db then ns.db.settings.subTab = key end
+  for k, f in pairs(subs) do f:SetShown(k == key) end
+  PaintSubs()
+end
+
+local function BuildTab(panel)
+  local x = 8
+  for _, key in ipairs({ "seek", "offer" }) do
+    local b = UI:CreateButton(panel, "", 130, SUB_H)
+    b:SetPoint("TOPLEFT", x, -4)
+    b.line = b:CreateTexture(nil, "OVERLAY")
+    b.line:SetColorTexture(C.gold.r, C.gold.g, C.gold.b, 1)
+    b.line:SetPoint("BOTTOMLEFT", 2, 0)
+    b.line:SetPoint("BOTTOMRIGHT", -2, 0)
+    b.line:SetHeight(2)
+    b:SetScript("OnClick", function() ns.ShowSub(key) end)
+    Tip(b, key == "seek" and L.M_F_SEEKS or L.M_F_OFFERS, key == "seek" and L.SUB_SEEK_TT or L.SUB_OFFER_TT)
+    subBtns[key] = b
+    x = x + 134
+
+    local f = CreateFrame("Frame", nil, panel)
+    f:SetPoint("TOPLEFT", 0, -(SUB_H + 6))
+    f:SetPoint("BOTTOMRIGHT", 0, 0)
+    f:Hide()
+    subs[key] = f
+  end
+  subRefresh.seek = ns.BuildPanel(subs.seek)
+  subRefresh.offer = ns.BuildMarketPanel(subs.offer)
+  ns.OnChanged(function() if panel:IsVisible() then PaintSubs() end end)
+  ns.ShowSub((ns.db and ns.db.settings.subTab == "offer") and "offer" or "seek")
+  return function()
+    PaintSubs()
+    for _, fn in pairs(subRefresh) do if type(fn) == "function" then GOS:SafeCall(fn) end end
+  end
+end
+
 ---------------------------------------------------------------- registration
 UI:RegisterFeature({
-  id = ns.FEATURE, label = L.TAB, desc = L.FEATURE_DESC, order = 45,
-  build = function(c) return ns.BuildPanel(c) end,
+  id = ns.FEATURE, label = L.M_TAB, desc = L.M_FEATURE_DESC, order = 45,
+  build = function(c) return BuildTab(c) end,
 })
 
 SLASH_GUILDOSCRAFTORDERS1 = "/gco"
@@ -515,4 +681,5 @@ SlashCmdList.GUILDOSCRAFTORDERS = function(msg)
     return
   end
   UI:OpenWindow(ns.FEATURE)
+  ns.ShowSub("seek")
 end

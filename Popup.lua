@@ -63,9 +63,10 @@ local function Build()
   f.open = UI:CreateButton(f, L.POPUP_OPEN, 80, 20)
   f.open:SetPoint("BOTTOMRIGHT", -8, 8)
   f.open:SetScript("OnClick", function()
-    local feature = current and current.feature
+    local feature, sub = current and current.feature, current and current.sub
     f:Hide()
     if feature then UI:OpenWindow(feature) end
+    if sub and ns.ShowSub then ns.ShowSub(sub) end
   end)
 
   -- the popup's own action (sign up for a group), left of "Show"
@@ -151,7 +152,7 @@ function ns.ShowPopup(o, why)
   local id = o.id
   local body = o.sk and L.SKILL_TITLE:format(ns.OrderLabel(o)) or ns.OrderText(o)
   Pop({
-    key = id, setting = "popup", feature = ns.FEATURE,
+    key = id, setting = "popup", feature = ns.FEATURE, sub = "seek",
     icon = ns.ItemIcon(o), head = o.sk and L.POPUP_SKILL or L.POPUP_NEW,
     text = ns.ColorName(o.by) .. ": " .. body .. (why or ""),
     still = function()
@@ -173,9 +174,12 @@ function ns.ShowOfferPopup(o)
   if seek then head = o.it and L.M_POPUP_SEEK_ITEM or L.M_POPUP_SEEK_SERVICE
   else head = o.it and L.M_POPUP_ITEM or L.M_POPUP_SERVICE end
   local have = seek and ns.OfferHave(o) or 0
+  local why = ""
+  if have > 0 then why = "  |cff40ff40" .. L.M_YOU_HAVE:format(have) .. "|r"
+  elseif ns.SeekForMe(o) then why = "  |cff40ff40" .. L.SVC_YOU_CAN .. "|r" end
   Pop({
-    key = id, setting = "marketPopup", feature = ns.MARKET_FEATURE,
-    icon = ns.OfferIcon(o), head = head .. (have > 0 and ("  |cff40ff40" .. L.M_YOU_HAVE:format(have) .. "|r") or ""),
+    key = id, setting = seek and "popup" or "marketPopup", feature = ns.FEATURE, sub = seek and "seek" or "offer",
+    icon = ns.OfferIcon(o), head = head .. why,
     text = ns.ColorName(o.by) .. ": " .. ns.OfferLabel(o) .. (o.pr and ("  |cffffd100" .. o.pr .. "|r") or "")
       .. (o.note and ("\n|cffaaaaaa\"" .. o.note .. "\"|r") or ""),
     still = function()

@@ -21,9 +21,8 @@ local KEEP_GONE = ns.DAY
 
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 
-function ns.MarketEnabled()
-  return GOS and GOS.IsFeatureEnabled and GOS:IsFeatureEnabled(ns.MARKET_FEATURE)
-end
+-- the marketplace shares the orders' tab (and its switch in Guild OS) since 2.1.0
+function ns.MarketEnabled() return ns.Enabled() end
 
 local function Store()
   local g = ns.G()
@@ -52,18 +51,96 @@ function ns.OfferHave(o)
   return ok and tonumber(n) or 0
 end
 
+---------------------------------------------------------------- known services
+-- Services the plugin knows: they get an icon, are found in the suggestions (in either
+-- language), read in each player's own language, and whoever can do one hears of a request.
+-- A service travels as its text, so an entry is recognized by any of its names.
+ns.SERVICES = {
+  { key = "lockpick", class = "ROGUE", icon = "Interface\\Icons\\Spell_Nature_MoonKey",
+    names = { "Lockpicking", "Schlossknacken", "Pick Lock", "Schloss knacken", "Lockbox", "Lockboxes",
+              "Schließkassette", "Schließkassetten", "Open lockboxes", "Schließkassetten öffnen" },
+    skill = { "Lockpicking", "Schlossknacken" } },
+}
+for _, s in ipairs(ns.SERVICES) do
+  s.lower = {}
+  for i, n in ipairs(s.names) do s.lower[i] = n:lower() end
+end
+
+function ns.ServiceName(s) return L["SVC_" .. s.key] end
+
+-- the known service an entry's text means, or nil
+function ns.ServiceOf(text)
+  text = strtrim(text or ""):lower()
+  if text == "" then return nil end
+  for _, s in ipairs(ns.SERVICES) do
+    if text == ns.ServiceName(s):lower() then return s end
+    for _, n in ipairs(s.lower) do if text == n then return s end end
+  end
+end
+
+-- services for the typed text (any of their names contains it), for the suggestion lists
+function ns.SuggestServices(text)
+  text = strtrim(text or ""):lower()
+  local out = {}
+  if #text < 3 then return out end
+  for _, s in ipairs(ns.SERVICES) do
+    local hit = ns.ServiceName(s):lower():find(text, 1, true)
+    for _, n in ipairs(s.lower) do hit = hit or n:find(text, 1, true) end
+    if hit then out[#out + 1] = { svc = s, name = ns.ServiceName(s), icon = s.icon } end
+  end
+  return out
+end
+
+-- my own skill in a service: rank (or true when the class has it but no skill line shows)
+function ns.MyServiceSkill(s)
+  local _, class = UnitClass("player")
+  if s.class and class ~= s.class then return nil end
+  if GetNumSkillLines and GetSkillLineInfo then
+    for i = 1, GetNumSkillLines() do
+      local name, header, _, rank = GetSkillLineInfo(i)
+      if not header and name then
+        for _, n in ipairs(s.skill or {}) do if name == n then return rank or true end end
+      end
+    end
+  end
+  return true
+end
+
+-- guild members who can do a service (by class), online first: { name, online }
+function ns.ServicePeople(s)
+  local out = {}
+  for who, e in pairs(ns.roster or {}) do
+    if s.class and e.class == s.class then out[#out + 1] = { who, e.online } end
+  end
+  table.sort(out, function(a, b)
+    if a[2] ~= b[2] then return a[2] end
+    return a[1] < b[1]
+  end)
+  return out
+end
+
+-- a request for a service I can do
+function ns.SeekForMe(o)
+  if not ns.OfferSeek(o) or o.it or o.by == ns.Me() then return false end
+  local s = ns.ServiceOf(o.txt)
+  return s and ns.MyServiceSkill(s) ~= nil or false
+end
+
 -- "3x [Mithril Bar]" or the service in brackets
 function ns.OfferLabel(o)
   if o.it then
     local _, link = GetItemInfo(o.it)
     return (o.n > 1 and (o.n .. "x ") or "") .. (link or ("|cffffffff[" .. o.txt .. "]|r"))
   end
-  return "|cff80c0ff[" .. o.txt .. "]|r"
+  local s = ns.ServiceOf(o.txt)
+  return "|cff80c0ff[" .. (s and ns.ServiceName(s) or o.txt) .. "]|r"
 end
 
 function ns.OfferIcon(o)
   local GetIcon = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
-  return (o.it and GetIcon and GetIcon(o.it)) or "Interface\\Icons\\INV_Misc_Note_05"
+  if o.it then return (GetIcon and GetIcon(o.it)) or "Interface\\Icons\\INV_Misc_Note_05" end
+  local s = o.txt and ns.ServiceOf(o.txt)
+  return s and s.icon or "Interface\\Icons\\INV_Misc_Note_05"
 end
 
 -- who wants an offer (sorted), and whether I do
@@ -163,13 +240,19 @@ function ns.OnOfferChanged(o, old)
   if old or time() - (o.u or 0) > 600 or o.by == ns.Me() or o.st ~= "open" then return end
   local seek = ns.OfferSeek(o)
   local have = seek and ns.OfferHave(o) or 0
-  -- a request for something I carry always comes, with a sound
-  if ns.db.settings.marketNotify ~= false or have > 0 then
+  local can = ns.SeekForMe(o)
+  -- requests share the "Looking for" tab's switch (the orders'), offers have their own
+  local notify
+  if seek then notify = ns.db.settings.notifyAll ~= false else notify = ns.db.settings.marketNotify ~= false end
+  -- a request for something I carry or can do always comes, with a sound
+  if notify or have > 0 or can then
+    local why = ""
+    if have > 0 then why = " |cff40ff40" .. L.M_YOU_HAVE:format(have) .. "|r"
+    elseif can then why = " |cff40ff40" .. L.SVC_YOU_CAN .. "|r" end
     ns.Print((seek and L.M_SEEK_MSG or L.M_NEW_MSG):format(ns.ColorName(o.by), ns.OfferLabel(o))
-      .. (o.pr and (" |cffffd100" .. o.pr .. "|r") or "")
-      .. (have > 0 and (" |cff40ff40" .. L.M_YOU_HAVE:format(have) .. "|r") or ""))
+      .. (o.pr and (" |cffffd100" .. o.pr .. "|r") or "") .. why)
   end
-  if have > 0 then Ding() end
+  if have > 0 or can then Ding() end
   if ns.ShowOfferPopup then ns.ShowOfferPopup(o) end
 end
 

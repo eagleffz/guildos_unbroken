@@ -1,5 +1,5 @@
--- The "Market" tab in the Guild OS window: put up an item (drag it from your bags onto the slot or
--- the field, shift-click it, or type it) or a service, and see what the guild offers. Plus /gmarkt.
+-- The "Offering" half of the marketplace tab: put up an item (drag it from your bags onto the
+-- slot or the field, shift-click it, or type it) or a service, and see what the guild offers.
 local _, ns = ...
 local L = ns.L
 local GOS = GuildOS
@@ -64,8 +64,12 @@ end
 -- the entry's tooltip (used by the popup too)
 function ns.OfferTooltip(tt, o)
   local seek = ns.OfferSeek(o)
+  local svc = not o.it and ns.ServiceOf(o.txt)
   if o.it then tt:SetHyperlink("item:" .. o.it)
-  else tt:AddLine(o.txt, 0.5, 0.75, 1) ; tt:AddLine(L.M_SERVICE, 0.7, 0.7, 0.7) end
+  else
+    tt:AddLine(svc and ns.ServiceName(svc) or o.txt, 0.5, 0.75, 1)
+    tt:AddLine(svc and L["SVC_" .. svc.key .. "_TT"] or L.M_SERVICE, 0.7, 0.7, 0.7, true)
+  end
   tt:AddLine(" ")
   tt:AddLine(ns.OfferTag(o) .. "  " .. L.P_LEADER:format(ns.ColorName(o.by)) .. "  ·  " .. ns.Ago(o.c), 1, 1, 1)
   if o.it and o.n > 1 then tt:AddLine(L.M_QTY_LINE:format(o.n), 1, 1, 1) end
@@ -83,12 +87,24 @@ function ns.OfferTooltip(tt, o)
         1, 1, 1, on and 0.25 or 0.5, on and 1 or 0.5, on and 0.25 or 0.5)
     end
   end
+  -- a request for a known service: who in the guild can do it
+  if seek and svc then
+    local people = ns.ServicePeople(svc)
+    if #people > 0 then
+      tt:AddLine(" ")
+      tt:AddLine(L.SVC_CAN_DO, GOLD[1], GOLD[2], GOLD[3])
+      for i, p in ipairs(people) do
+        if i > 10 then break end
+        tt:AddDoubleLine(ns.ColorName(p[1]), p[2] and L.P_ONLINE or L.P_OFFLINE,
+          1, 1, 1, p[2] and 0.25 or 0.5, p[2] and 1 or 0.5, p[2] and 0.25 or 0.5)
+      end
+    end
+  end
 end
 
+-- the "Offering" tab lists offers only; requests are in "Looking for" (UI.lua)
 local function Matches(o, filter, me, mine)
-  if not ns.OfferLive(o) then return false end
-  if filter == "offers" then return not ns.OfferSeek(o) end
-  if filter == "seeks" then return ns.OfferSeek(o) end
+  if not ns.OfferLive(o) or ns.OfferSeek(o) then return false end
   if filter == "items" then return o.it ~= nil end
   if filter == "services" then return o.it == nil end
   if filter == "mine" then return o.by == me or mine end
@@ -110,20 +126,36 @@ local function Actions(o, me, mine)
   end
   return out
 end
+ns.OfferActions = Actions
+
+-- a row's two lines for an offer or a request (the "Looking for" list uses it too)
+function ns.OfferRowText(o, me, wants, mine)
+  local seek = ns.OfferSeek(o)
+  local title = ns.OfferTag(o) .. "  " .. ns.OfferLabel(o) .. (o.pr and ("  |cffffd100" .. o.pr .. "|r") or "")
+    .. (o.it and "" or ("  |cff888888" .. L.M_SERVICE .. "|r"))
+  local meta = { L.P_LEADER:format(ns.ColorName(o.by)), ns.Ago(o.c) }
+  if #wants > 0 then
+    local names = {}
+    for j = 1, math.min(3, #wants) do names[j] = ns.ColorName(wants[j]) end
+    meta[#meta + 1] = (seek and L.M_HAS_IT or L.M_WANTS):format(#wants,
+      table.concat(names, ", ") .. (#wants > 3 and " …" or ""))
+  end
+  if mine then meta[#meta + 1] = "|cff40ff40" .. (seek and L.M_YOU_HAVE_IT or L.M_YOU_WANT) .. "|r" end
+  local have = (seek and o.by ~= me and not mine) and ns.OfferHave(o) or 0
+  if have > 0 then meta[#meta + 1] = "|cff40ff40" .. L.M_YOU_HAVE:format(have) .. "|r"
+  elseif not mine and ns.SeekForMe(o) then meta[#meta + 1] = "|cff40ff40" .. L.SVC_YOU_CAN .. "|r" end
+  if o.note then meta[#meta + 1] = "|cffffffff\"" .. o.note .. "\"|r" end
+  return title, table.concat(meta, " · ")
+end
 
 function ns.BuildMarketPanel(panel)
   local filter = "all"
-  local seekMode = false -- the form puts up a request ("Suche") instead of an offer ("Biete")
   local refresh
 
-  ---------------------------------------------------------------- line 1: the new entry
-  local kindBtn = UI:CreateButton(panel, L.M_KIND_OFFER, 76, FIELD_H)
-  kindBtn:SetPoint("TOPLEFT", 8, -6)
-  Tip(kindBtn, L.M_KIND_OFFER .. " / " .. L.M_KIND_SEEK, L.M_KIND_TT)
-
+  ---------------------------------------------------------------- line 1: the new offer
   local slot = CreateFrame("Button", nil, panel, "BackdropTemplate")
   slot:SetSize(FIELD_H, FIELD_H)
-  slot:SetPoint("LEFT", kindBtn, "RIGHT", 4, 0)
+  slot:SetPoint("TOPLEFT", 8, -6)
   slot:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
   slot:SetBackdropColor(0.05, 0.05, 0.066, 1)
   slot:SetBackdropBorderColor(C.border.r, C.border.g, C.border.b, 0.6)
@@ -151,17 +183,6 @@ function ns.BuildMarketPanel(panel)
   -- the button sits at the right edge (in line with the list), the note field takes the room between
   createBtn:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -22, -6)
   noteBox:SetPoint("RIGHT", createBtn, "LEFT", -6, 0)
-
-  local function PaintKind()
-    local col = seekMode and { 1, 0.6, 0.2 } or { 0.25, 0.75, 0.25 }
-    kindBtn.label:SetText(seekMode and L.M_KIND_SEEK or L.M_KIND_OFFER)
-    kindBtn.baseLabelColor = col
-    kindBtn.label:SetTextColor(col[1], col[2], col[3])
-    createBtn.label:SetText(seekMode and L.M_CREATE_SEEK or L.M_CREATE)
-    if priceBox.hint then priceBox.hint:SetText(seekMode and L.M_PRICE_HINT_SEEK or L.M_PRICE_HINT) end
-  end
-  kindBtn:SetScript("OnClick", function() seekMode = not seekMode; PaintKind() end)
-  PaintKind()
 
   local picked -- { id, text }: the item taken (dropped, shift-clicked or picked), while the field shows it
 
@@ -205,8 +226,8 @@ function ns.BuildMarketPanel(panel)
     end
   end
   local x = 8
-  for _, f in ipairs({ { "all", L.F_ACTIVE }, { "offers", L.M_F_OFFERS }, { "seeks", L.M_F_SEEKS },
-                       { "items", L.M_F_ITEMS }, { "services", L.M_F_SERVICES }, { "mine", L.F_MINE } }) do
+  for _, f in ipairs({ { "all", L.F_ACTIVE }, { "items", L.M_F_ITEMS }, { "services", L.M_F_SERVICES },
+                       { "mine", L.F_MINE } }) do
     local b = UI:CreateButton(panel, f[2], 60, BTN_H)
     b:SetPoint("TOPLEFT", x, -33)
     b:SetScript("OnClick", function() filter = f[1]; PaintFilters(); refresh() end)
@@ -243,7 +264,18 @@ function ns.BuildMarketPanel(panel)
 
   local sugBtns, sugItems, sel = {}, {}, 0
   local function PaintSel() for i, b in ipairs(sugBtns) do b.hl:SetShown(i == sel) end end
-  local function Pick(e) if e then drop:Hide(); SetItem(e.id) end end
+  local function Pick(e)
+    if not e then return end
+    drop:Hide()
+    if e.svc then
+      -- a known service: its name in the field, as typed text
+      itemBox:SetText(e.name)
+      itemBox:ClearFocus()
+      priceBox:SetFocus()
+    else
+      SetItem(e.id)
+    end
+  end
 
   for i = 1, SUG_N do
     local b = CreateFrame("Button", nil, drop)
@@ -269,13 +301,19 @@ function ns.BuildMarketPanel(panel)
   end
 
   local function ShowSuggestions(text)
-    local list = (text:find("|H", 1, true) or not ns.Suggest) and {} or ns.Suggest(text, SUG_N)
+    local list = {}
+    if not text:find("|H", 1, true) then
+      for _, s in ipairs(ns.SuggestServices(text)) do list[#list + 1] = s end
+      if ns.Suggest then
+        for _, e in ipairs(ns.Suggest(text, SUG_N - #list)) do list[#list + 1] = e end
+      end
+    end
     sugItems = list
     for i, b in ipairs(sugBtns) do
       local e = list[i]
       if e then
-        b.icon:SetTexture(ns.OfferIcon({ it = e.id }))
-        b.name:SetText(e.name)
+        b.icon:SetTexture(e.svc and e.icon or ns.OfferIcon({ it = e.id }))
+        b.name:SetText(e.svc and ("|cff80c0ff" .. e.name .. "|r  |cff888888" .. L.M_SERVICE .. "|r") or e.name)
         b:Show()
       else
         b:Hide()
@@ -311,7 +349,7 @@ function ns.BuildMarketPanel(panel)
   local function Submit()
     local still = picked and itemBox:GetText() == picked.text
     local o = ns.CreateOffer(itemBox:GetText(), qtyBox:GetText(), priceBox:GetText(), noteBox:GetText(),
-      still and picked.id or nil, seekMode)
+      still and picked.id or nil, false)
     if o then
       itemBox:SetText(""); priceBox:SetText(""); noteBox:SetText(""); qtyBox:SetText("1")
       itemBox:ClearFocus(); priceBox:ClearFocus(); noteBox:ClearFocus(); qtyBox:ClearFocus()
@@ -422,21 +460,9 @@ function ns.BuildMarketPanel(panel)
       row.offer = o
       if o.it then shownItems[o.it] = true end
       row.icon.icon:SetTexture(ns.OfferIcon(o))
-      local seek = ns.OfferSeek(o)
-      row.title:SetText(ns.OfferTag(o) .. "  " .. ns.OfferLabel(o) .. (o.pr and ("  |cffffd100" .. o.pr .. "|r") or "")
-        .. (o.it and "" or ("  |cff888888" .. L.M_SERVICE .. "|r")))
-      local meta = { L.P_LEADER:format(ns.ColorName(o.by)), ns.Ago(o.c) }
-      if #wants > 0 then
-        local names = {}
-        for j = 1, math.min(3, #wants) do names[j] = ns.ColorName(wants[j]) end
-        meta[#meta + 1] = (seek and L.M_HAS_IT or L.M_WANTS):format(#wants,
-          table.concat(names, ", ") .. (#wants > 3 and " …" or ""))
-      end
-      if mine then meta[#meta + 1] = "|cff40ff40" .. (seek and L.M_YOU_HAVE_IT or L.M_YOU_WANT) .. "|r" end
-      local have = (seek and o.by ~= me and not mine) and ns.OfferHave(o) or 0
-      if have > 0 then meta[#meta + 1] = "|cff40ff40" .. L.M_YOU_HAVE:format(have) .. "|r" end
-      if o.note then meta[#meta + 1] = "|cffffffff\"" .. o.note .. "\"|r" end
-      row.meta:SetText(table.concat(meta, " · "))
+      local title, meta = ns.OfferRowText(o, me, wants, mine)
+      row.title:SetText(title)
+      row.meta:SetText(meta)
 
       local acts = Actions(o, me, mine)
       FillButton(row.b1, acts[1], o)
@@ -464,12 +490,11 @@ function ns.BuildMarketPanel(panel)
   return refresh
 end
 
----------------------------------------------------------------- registration
-UI:RegisterFeature({
-  id = ns.MARKET_FEATURE, label = L.M_TAB, desc = L.M_FEATURE_DESC, order = 47,
-  build = function(c) return ns.BuildMarketPanel(c) end,
-})
-
+---------------------------------------------------------------- slash command
+-- the marketplace tab itself is registered in UI.lua: "Offering" is one of its two halves
 SLASH_GUILDOSMARKET1 = "/gmarkt"
 SLASH_GUILDOSMARKET2 = "/gmarket"
-SlashCmdList.GUILDOSMARKET = function() UI:OpenWindow(ns.MARKET_FEATURE) end
+SlashCmdList.GUILDOSMARKET = function()
+  UI:OpenWindow(ns.FEATURE)
+  if ns.ShowSub then ns.ShowSub("offer") end
+end
