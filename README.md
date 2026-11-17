@@ -43,7 +43,7 @@ Ein Formular für alles, was du brauchst. Das Plugin entscheidet selbst, was dar
 Jeder Charakter trägt ein, welchen Talentbaum seiner Klasse er spielt (**Mainspec**) und welchen er bei Bedarf übernimmt (**Offspec**, optional). Beim Druiden ist Wilder Kampf als Tank und als Schaden getrennt.
 
 - **Eintragen:** im eigenen Tab **„My Char“** (oder `/gspec`, `/mychar`). Darunter steht, was die Gilde von dir sieht. Ein Klick speichert sofort; ein Hinweis im Chat erinnert jeden Charakter einmal daran.
-- **Anzeigen:** Im Roster von Guild OS steht im Tooltip jedes Mitglieds seine Main- und Offspec mit Rolle (Tank, Heiler, Schaden).
+- **Anzeigen:** Im Roster von Guild OS steht im Tooltip jedes Mitglieds seine Main- und Offspec mit Rollen-Symbol und Rolle (Tank, Heiler, Schaden).
 - Wird automatisch mit allen Gildenmitgliedern abgeglichen, die das Plugin haben.
 
 ## Pinnwand (Tab „Pinnwand“)

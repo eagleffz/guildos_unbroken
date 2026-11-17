@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.1
+- Role icons (tank, healer, damage) next to the specs: in the "My Char" tab and in the Guild OS roster tooltip.
+
 ## 2.3.0
 - Main spec and offspec moved into their own tab, **My Char** (`/gspec`, `/mychar`), which also shows what the guild sees.
 

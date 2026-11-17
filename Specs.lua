@@ -45,11 +45,26 @@ end
 
 local ROLE_COLOR = { T = "ff6fa8ff", H = "ff40ff40", D = "ffff6060" }
 
--- "Protection (Tank)" with the role colored
-function ns.SpecText(key)
+-- a small icon per role: ability icons every client has (shield, holy light, two blades)
+local ROLE_ICON = {
+  T = "Interface\\Icons\\Ability_Defend",
+  H = "Interface\\Icons\\Spell_Holy_FlashHeal",
+  D = "Interface\\Icons\\Ability_DualWield",
+}
+
+-- the role's icon as text, `size` pixels (cut to the inner part, like Blizzard's buttons)
+function ns.RoleIcon(role, size)
+  local path = ROLE_ICON[role]
+  if not path then return "" end
+  size = size or 14
+  return ("|T%s:%d:%d:0:0:64:64:5:59:5:59|t"):format(path, size, size)
+end
+
+-- "[icon] Protection (Tank)" with the role colored
+function ns.SpecText(key, size)
   local s = key and ns.SPECS[key]
   if not s then return nil end
-  return s.name .. " |c" .. ROLE_COLOR[s.role] .. "(" .. L["S_ROLE_" .. s.role] .. ")|r"
+  return ns.RoleIcon(s.role, size) .. " " .. s.name .. " |c" .. ROLE_COLOR[s.role] .. "(" .. L["S_ROLE_" .. s.role] .. ")|r"
 end
 
 local function Store()
@@ -139,7 +154,8 @@ local function BuildPanel(panel)
     t:SetPoint("TOPLEFT", 10, y - 4)
     local x = 90
     local list = {}
-    for _, s in ipairs(specs) do list[#list + 1] = { s.key, ns.SpecText(s.key) } end
+    -- on the buttons the icon says the role
+    for _, s in ipairs(specs) do list[#list + 1] = { s.key, ns.RoleIcon(s.role, 16) .. " " .. s.name } end
     if withNone then list[#list + 1] = { "none", L.S_NONE } end
     for _, e in ipairs(list) do
       local b = UI:CreateButton(panel, e[2], BW, 22)
