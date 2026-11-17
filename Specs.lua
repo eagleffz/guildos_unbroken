@@ -43,7 +43,13 @@ for class, list in pairs(LIST) do
   end
 end
 
-local ROLE_COLOR = { T = "ff6fa8ff", H = "ff40ff40", D = "ffff6060" }
+-- tank blue, healer green, damage red
+local ROLE_RGB = { T = { 0.25, 0.55, 1.00 }, H = { 0.25, 0.90, 0.25 }, D = { 1.00, 0.27, 0.27 } }
+local ROLE_COLOR = {}
+for role, c in pairs(ROLE_RGB) do
+  ROLE_COLOR[role] = ("ff%02x%02x%02x"):format(c[1] * 255, c[2] * 255, c[3] * 255)
+end
+ns.ROLE_RGB = ROLE_RGB
 
 -- a small icon per role: ability icons every client has (shield, holy light, two blades)
 local ROLE_ICON = {
@@ -60,11 +66,11 @@ function ns.RoleIcon(role, size)
   return ("|T%s:%d:%d:0:0:64:64:5:59:5:59|t"):format(path, size, size)
 end
 
--- "[icon] Protection (Tank)" with the role colored
+-- "[icon] Protection (Tank)" in the role's color
 function ns.SpecText(key, size)
   local s = key and ns.SPECS[key]
   if not s then return nil end
-  return ns.RoleIcon(s.role, size) .. " " .. s.name .. " |c" .. ROLE_COLOR[s.role] .. "(" .. L["S_ROLE_" .. s.role] .. ")|r"
+  return ns.RoleIcon(s.role, size) .. " |c" .. ROLE_COLOR[s.role] .. s.name .. " (" .. L["S_ROLE_" .. s.role] .. ")|r"
 end
 
 local function Store()
@@ -128,9 +134,13 @@ local function Paint()
   for _, b in ipairs(frame.buttons) do
     local on = r and ((b.row == "ms" and r.ms == b.key) or (b.row == "os" and (r.os or "none") == b.key))
     if b.row == "os" and b.key == "none" and not r then on = false end
-    local col = on and C.gold or C.text
-    b.baseLabelColor = { col.r, col.g, col.b }
-    b.label:SetTextColor(col.r, col.g, col.b)
+    -- the label keeps its role color; a gold bar under the button marks the choice
+    local s = ns.SPECS[b.key]
+    local rgb = s and ROLE_RGB[s.role]
+    local col = rgb and { rgb[1], rgb[2], rgb[3] } or (on and { C.gold.r, C.gold.g, C.gold.b } or { C.text.r, C.text.g, C.text.b })
+    b.baseLabelColor = col
+    b.label:SetTextColor(col[1], col[2], col[3])
+    b.sel:SetShown(on and true or false)
   end
 end
 
@@ -161,6 +171,12 @@ local function BuildPanel(panel)
       local b = UI:CreateButton(panel, e[2], BW, 22)
       b:SetPoint("TOPLEFT", x, y)
       b.row, b.key = rowKey, e[1]
+      b.sel = b:CreateTexture(nil, "OVERLAY")
+      b.sel:SetColorTexture(C.gold.r, C.gold.g, C.gold.b, 1)
+      b.sel:SetPoint("BOTTOMLEFT", 2, 0)
+      b.sel:SetPoint("BOTTOMRIGHT", -2, 0)
+      b.sel:SetHeight(2)
+      b.sel:Hide()
       b:SetScript("OnClick", function()
         local r = ns.SpecsOf(ns.Me())
         if rowKey == "ms" then

@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.2
+- Role colors: tank blue, healer green, damage red, for the whole spec name (My Char buttons, roster tooltip). The chosen spec is marked with a gold bar.
+
 ## 2.3.1
 - Role icons (tank, healer, damage) next to the specs: in the "My Char" tab and in the Guild OS roster tooltip.
 
