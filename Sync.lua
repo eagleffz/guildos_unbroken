@@ -126,6 +126,17 @@ local function ValidReply(r, sender, relay)
   return true
 end
 
+-- main / offspec: one record per character, only from that character
+local function ValidSpec(s, sender, relay)
+  if type(s) ~= "table" or not SafeName(s.who) or s.ed ~= s.who or s.id ~= s.who then return false end
+  if type(s.ms) ~= "string" or not ns.SPECS[s.ms] then return false end
+  if s.os ~= nil and (type(s.os) ~= "string" or not ns.SPECS[s.os]) then return false end
+  local soon = time() + ns.DAY
+  if not Num(s.c, 0, soon) or not Num(s.u, 0, soon) or not Num(s.rev, 0, 1e6) then return false end
+  if not relay and s.who ~= sender then return false end
+  return true
+end
+
 local function TooMany(store, by)
   local n = 0
   for _, o in pairs(store) do
@@ -198,9 +209,19 @@ function ns.SendHello(force)
     for id, p in pairs(g.posts) do posts[id] = p.rev or 0 end
     for id, r in pairs(g.replies) do replies[id] = r.rev or 0 end
   end
+  local specs
+  if ns.SpecStore and ns.SpecStore() then
+    specs = {}
+    for id, s in pairs(g.specs) do specs[id] = s.rev or 0 end
+  end
   -- oe = false: my orders are switched off, so my empty list says nothing about what I lack
   Send({ k = "H", o = have, oe = ns.Enabled() and true or false, m = offers, w = wants,
-         b = posts, r = replies, ver = ns.VERSION })
+         b = posts, r = replies, sp = specs, ver = ns.VERSION })
+end
+
+function ns.SendSpec(s)
+  Heard("T:" .. s.id, s.rev)
+  Send({ k = "T", o = s })
 end
 
 function ns.SendPost(p)
@@ -277,6 +298,9 @@ local RECORDS = {
   R = { valid = ValidReply, author = "who", store = function() local g = ns.BoardStore(); return g and g.replies end,
         on = function(...) ns.OnReplyChanged(...) end,
         fields = { "id", "p", "who", "txt", "st", "c", "u", "rev", "ed" } },
+  T = { valid = ValidSpec, author = "who", store = function() local g = ns.SpecStore(); return g and g.specs end,
+        on = function(...) ns.OnSpecChanged(...) end,
+        fields = { "id", "who", "ms", "os", "c", "u", "rev", "ed" } },
 }
 
 function ns.RecordNewer(a, b)
@@ -333,6 +357,9 @@ local function OnHello(msg)
     newer = Compare(g.posts, msg.b, "B", function(p) return not ns.PostExpired(p) end) or newer
     newer = Compare(g.replies, msg.r, "R", function(r) return g.posts[r.p] ~= nil end) or newer
   end
+  if type(msg.sp) == "table" and ns.SpecStore() then
+    newer = Compare(g.specs, msg.sp, "T", function() return true end) or newer
+  end
   if newer then C_Timer.After(2 + math.random() * 4, function() ns.SendHello() end) end
 end
 
@@ -347,6 +374,7 @@ comm:RegisterComm(PREFIX, function(_, text, dist, sender)
     if msg.k == "O" then if ns.Enabled() then OnOrder(msg, sender) end
     elseif msg.k == "M" or msg.k == "W" then if ns.MarketEnabled() then OnRecord(msg, sender, msg.k) end
     elseif msg.k == "B" or msg.k == "R" then if ns.BoardEnabled() then OnRecord(msg, sender, msg.k) end
+    elseif msg.k == "T" then OnRecord(msg, sender, "T")
     elseif msg.k == "H" then OnHello(msg) end
   end)
 end)
@@ -370,6 +398,7 @@ local function Start(tries)
   g.plans, g.signs = nil, nil
   ns.PurgeMarket()
   ns.PurgeBoard()
+  ns.PurgeSpecs()
   C_Timer.After(5, function() ns.SendHello(true) end)
   -- after the guild had time to answer
   C_Timer.After(25, function()
@@ -379,6 +408,13 @@ local function Start(tries)
     if nm > 0 then ns.Print(L.M_LOGIN_HINT:format(nm)) end
     local nb = ns.BoardEnabled() and ns.CountPosts() or 0
     if nb > 0 then ns.Print(L.B_LOGIN_HINT:format(nb)) end
+    -- once per character: say where main and offspec are set
+    local me = ns.Me()
+    ns.db.settings.specHint = ns.db.settings.specHint or {}
+    if not ns.SpecsOf(me) and not ns.db.settings.specHint[me] and ns.CLASS_SPECS[ns.MyClass() or ""] then
+      ns.db.settings.specHint[me] = true
+      ns.Print(L.S_LOGIN_HINT)
+    end
   end)
 end
 ns.Start = Start

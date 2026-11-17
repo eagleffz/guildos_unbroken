@@ -1,4 +1,4 @@
-# Guild OS Unbroken (Marktplatz mit Suche & Biete, Pinnwand)
+# Guild OS Unbroken (Marktplatz mit Suche & Biete, Pinnwand, Main-/Offspec)
 
 Plugin für **Guild OS**: ein Marktplatz für die Gilde. Unter **Suche** steht alles, was jemand braucht – Handwerksaufträge, Aufrufe fürs Skillen, gesuchte Items und Dienste. Unter **Biete** steht alles, was jemand übrig hat oder anbietet. Dazu eine Pinnwand.
 
@@ -38,6 +38,14 @@ Ein Formular für alles, was du brauchst. Das Plugin entscheidet selbst, was dar
 - **Versions-Marker im Guild-OS-Roster:** ein zweiter Punkt für dieses Plugin – lila = aktuell, rot = veraltet.
 - Deutsch und Englisch.
 
+## Main- und Offspec
+
+Jeder Charakter trägt ein, welchen Talentbaum seiner Klasse er spielt (**Mainspec**) und welchen er bei Bedarf übernimmt (**Offspec**, optional). Beim Druiden ist Wilder Kampf als Tank und als Schaden getrennt.
+
+- **Eintragen:** Knopf **„Meine Specs“** oben rechts im Marktplatz-Tab oder `/gspec`. Ein Klick speichert sofort; ein Hinweis im Chat erinnert jeden Charakter einmal daran.
+- **Anzeigen:** Im Roster von Guild OS steht im Tooltip jedes Mitglieds seine Main- und Offspec mit Rolle (Tank, Heiler, Schaden).
+- Wird automatisch mit allen Gildenmitgliedern abgeglichen, die das Plugin haben.
+
 ## Pinnwand (Tab „Pinnwand“)
 
 Ein Schwarzes Brett für die Gilde:
@@ -66,6 +74,7 @@ Ein Schwarzes Brett für die Gilde:
 
 - `/gco` oder `/craftorders` öffnet den Marktplatz bei „Suche“, `/gmarkt` bei „Biete“; alternativ `/gos open craftorders` oder direkt im Guild-OS-Fenster.
 - `/gboard` oder `/pinnwand` öffnet die Pinnwand, alternativ `/gos open board`.
+- `/gspec` öffnet das Fenster für Main- und Offspec.
 - Ein- und ausschalten lässt sich das Plugin in den **Guild-OS-Einstellungen**.
 - Einträge sehen nur Gildenmitglieder, die das Plugin ebenfalls installiert haben.
 

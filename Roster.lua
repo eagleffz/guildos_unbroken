@@ -30,6 +30,7 @@ local function Redraw()
     if GuildOS.RefreshRosterUI then GuildOS:SafeCall(GuildOS.RefreshRosterUI, GuildOS) end
   end)
 end
+ns.RedrawRoster = Redraw
 
 ---------------------------------------------------------------- "a newer version is out"
 -- After login (and whenever a newer one turns up later) a popup names the newest version a
@@ -110,11 +111,21 @@ end
 
 local function AddTooltip(row)
   local data = row and row.memberData
-  if not data or not ns.Enabled() or not GameTooltip:IsShown() then return end
-  local ver = ns.PeerVersion(MemberName(data))
-  if not ver then return end
+  if not data or not GameTooltip:IsShown() then return end
+  local name = MemberName(data)
+  -- main / offspec, whenever the member set them
+  local s = ns.SpecsOf and ns.SpecsOf(name)
+  local ver = ns.Enabled() and ns.PeerVersion(name)
+  if s or ver then GameTooltip:AddLine(" ") end
+  if s then
+    GameTooltip:AddDoubleLine(L.S_MAIN, ns.SpecText(s.ms) or "?", 0.85, 0.66, 0.31, 1, 1, 1)
+    if s.os then GameTooltip:AddDoubleLine(L.S_OFF, ns.SpecText(s.os) or "?", 0.85, 0.66, 0.31, 1, 1, 1) end
+  end
+  if not ver then
+    if s then GameTooltip:Show() end
+    return
+  end
   local old = ns.CompareVersions(ver, ns.VERSION) < 0
-  GameTooltip:AddLine(" ")
   if old then
     GameTooltip:AddLine(L.ROSTER_VER_OLD:format(ver), C.red.r, C.red.g, C.red.b)
   else

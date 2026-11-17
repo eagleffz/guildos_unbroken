@@ -1,9 +1,9 @@
 ## Interface: 20506, 16001, 120105
 ## Title: |cffFFD700Guild OS|r |cff888888Unbroken|r
-## Notes: Plugin for Guild OS. A guild marketplace: "Looking for" (crafting orders, skilling calls, requests for items and services) and "Offering". Plus a message board.
-## Notes-deDE: Plugin für Guild OS. Ein Marktplatz für die Gilde: Suche (Handwerksaufträge, Skill-Aufrufe, gesuchte Items und Dienste) und Biete. Dazu eine Pinnwand.
+## Notes: Plugin for Guild OS. A guild marketplace: "Looking for" (crafting orders, skilling calls, requests for items and services) and "Offering". Plus a message board and main/offspec for every character.
+## Notes-deDE: Plugin für Guild OS. Ein Marktplatz für die Gilde: Suche (Handwerksaufträge, Skill-Aufrufe, gesuchte Items und Dienste) und Biete. Dazu eine Pinnwand und Main-/Offspec für jeden Charakter.
 ## Author: Christian
-## Version: 2.1.0
+## Version: 2.2.0
 ## Dependencies: GuildOS
 ## SavedVariables: GuildOSCraftOrdersDB
 ## X-Category: Guild
@@ -15,6 +15,7 @@ Items.lua
 Search.lua
 Market.lua
 Board.lua
+Specs.lua
 Sync.lua
 Popup.lua
 Roster.lua

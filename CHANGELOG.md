@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.2.0
+- **Main spec and offspec** for every character: set with the "My specs" button in the marketplace tab or `/gspec`, shown with the role in the Guild OS roster tooltip, synced across the guild. Druids pick Feral as tank or as damage.
+
 ## 2.1.0
 - Orders and marketplace are one tab, **Marketplace**, with two sub-tabs: **Looking for** and **Offering**.
 - **Looking for**: one form for everything you need. A craftable item becomes a crafting order (take, deliver), "for skilling" a skilling call, anything else a plain request answered with "Have it".
