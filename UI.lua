@@ -673,13 +673,6 @@ UI:RegisterFeature({
 SLASH_GUILDOSCRAFTORDERS1 = "/gco"
 SLASH_GUILDOSCRAFTORDERS2 = "/craftorders"
 SlashCmdList.GUILDOSCRAFTORDERS = function(msg)
-  if strtrim(msg or ""):lower() == "version" then
-    -- the update popup has no tab checkbox: this turns it back on (or off again)
-    local on = ns.db.settings.versionPopup == false
-    if on then ns.db.settings.versionPopup = nil else ns.db.settings.versionPopup = false end
-    ns.Print(on and L.VER_POPUP_ON_MSG or L.VER_POPUP_OFF_MSG)
-    return
-  end
   UI:OpenWindow(ns.FEATURE)
   ns.ShowSub("seek")
 end

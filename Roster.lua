@@ -32,22 +32,6 @@ local function Redraw()
 end
 ns.RedrawRoster = Redraw
 
----------------------------------------------------------------- "a newer version is out"
--- After login (and whenever a newer one turns up later) a popup names the newest version a
--- guild member runs; once per version and session.
-local ready, told = false, nil
-local function CheckNewer()
-  if not ready or not (ns.AnyEnabled or ns.Enabled)() or not ns.ShowVersionPopup then return end
-  local g = ns.G()
-  local best, who
-  for name, ver in pairs(g and g.versions or {}) do
-    if name ~= ns.Me() and ns.CompareVersions(ver, best or ns.VERSION) > 0 then best, who = ver, name end
-  end
-  if not best or (told and ns.CompareVersions(best, told) <= 0) then return end
-  told = best
-  ns.ShowVersionPopup(best, who)
-end
-
 function ns.SetPeerVersion(name, ver)
   local g = ns.G()
   if not g or not name then return end
@@ -55,9 +39,6 @@ function ns.SetPeerVersion(name, ver)
   if g.versions[name] ~= ver then
     g.versions[name] = ver
     Redraw()
-    if ready and ns.CompareVersions(ver, told or ns.VERSION) > 0 then
-      C_Timer.After(2, function() GuildOS:SafeCall(CheckNewer) end)
-    end
   end
 end
 
@@ -148,6 +129,4 @@ local ev = CreateFrame("Frame")
 ev:RegisterEvent("PLAYER_LOGIN")
 ev:SetScript("OnEvent", function()
   Hook()
-  -- give the guild roster and the first answers a moment
-  C_Timer.After(15, function() ready = true; GuildOS:SafeCall(CheckNewer) end)
 end)

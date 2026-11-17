@@ -50,10 +50,6 @@ local enUS = {
   POPUP_OFF = "No more popups", POPUP_MORE = "+%d more",
   POPUP_OFF_MSG = "Popups are off. Turn them back on with the \"Popup\" checkbox in the \"Looking for\" tab.",
   ROSTER_VER = "Unbroken v%s", ROSTER_VER_OLD = "Unbroken v%s (outdated)",
-  VER_POPUP_HEAD = "New version of Guild OS Unbroken",
-  VER_POPUP_TEXT = "Version %s is out (you have %s). %s already runs it.",
-  VER_POPUP_OFF_MSG = "Update popups are off. Turn them back on with /gco version.",
-  VER_POPUP_ON_MSG = "Update popups are on again.",
   -- shared by the tabs (once the group planner's)
   P_NOTIFY = "Notify", P_LEADER = "by %s", P_ONLINE = "online", P_OFFLINE = "offline",
   -- market
@@ -171,10 +167,6 @@ local deDE = {
   POPUP_OFF = "Keine Popups mehr", POPUP_MORE = "+%d weitere",
   POPUP_OFF_MSG = "Popups sind aus. Wieder einschalten mit dem Häkchen „Popup“ im Unter-Tab Suche.",
   ROSTER_VER = "Unbroken v%s", ROSTER_VER_OLD = "Unbroken v%s (veraltet)",
-  VER_POPUP_HEAD = "Neue Version von Guild OS Unbroken",
-  VER_POPUP_TEXT = "Version %s ist da (du hast %s). %s nutzt sie schon.",
-  VER_POPUP_OFF_MSG = "Update-Popups sind aus. Wieder einschalten mit /gco version.",
-  VER_POPUP_ON_MSG = "Update-Popups sind wieder an.",
   -- shared by the tabs (once the group planner's)
   P_NOTIFY = "Melden", P_LEADER = "von %s", P_ONLINE = "online", P_OFFLINE = "offline",
   -- market

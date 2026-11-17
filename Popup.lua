@@ -1,4 +1,4 @@
--- A small popup for a new order, offer or post (and a newer plugin version). It can be
+-- A small popup for a new order, offer or post. It can be
 -- dragged, closes by itself after a while, and can be switched off right in it or with the
 -- "Popup" checkbox in each tab (one switch per tab). Nothing pops up during
 -- combat: the newest one waits until the fight is over.
@@ -214,19 +214,6 @@ function ns.ShowPostPopup(p)
       tt:AddLine(ns.ColorName(p.by), 1, 0.82, 0)
       tt:AddLine(p.txt, 1, 1, 1, true)
     end,
-  })
-end
-
----------------------------------------------------------------- a newer version of this plugin
-local UPDATE_ICON = "Interface\\Icons\\INV_Misc_Note_01"
-
--- ver: the newest version a guild member runs; who: one of them
-function ns.ShowVersionPopup(ver, who)
-  Pop({
-    key = "version:" .. ver, setting = "versionPopup", offMsg = L.VER_POPUP_OFF_MSG,
-    icon = UPDATE_ICON, head = L.VER_POPUP_HEAD,
-    text = L.VER_POPUP_TEXT:format(ver, ns.VERSION, ns.ColorName(who)),
-    still = function() return ns.CompareVersions(ver, ns.VERSION) > 0 end,
   })
 end
 

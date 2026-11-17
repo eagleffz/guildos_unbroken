@@ -34,7 +34,6 @@ Ein Formular für alles, was du brauchst. Das Plugin entscheidet selbst, was dar
 - Chat-Meldung und Popup bei jedem neuen Eintrag eines anderen, je Unter-Tab abschaltbar („Alle melden“/„Melden“, „Popup“). Das Popup ist verschiebbar, schließt sich nach 25 Sekunden und wartet im Kampf.
 - **Automatischer Abgleich** mit allen Gildenmitgliedern, die das Plugin nutzen, auch mit denen, die gerade offline waren.
 - **Alle Items im Eingabefeld:** Die Liste baut sich nach dem ersten Login einmal langsam im Hintergrund auf (nicht im Kampf, nicht in Instanzen; etwa 10–20 Minuten) und wird gespeichert.
-- **Update-Hinweis:** Nach dem Login meldet ein Popup, wenn ein Gildenmitglied eine neuere Version nutzt. Abschalten im Popup, wieder einschalten mit `/gco version`.
 - **Versions-Marker im Guild-OS-Roster:** ein zweiter Punkt für dieses Plugin – lila = aktuell, rot = veraltet.
 - Deutsch und Englisch.
 

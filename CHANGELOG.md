@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.3
+- Removed the in-game popup about a newer version (and `/gco version`). The version dot in the Guild OS roster stays.
+
 ## 2.3.2
 - Role colors: tank blue, healer green, damage red, for the whole spec name (My Char buttons, roster tooltip). The chosen spec is marked with a gold bar.
 

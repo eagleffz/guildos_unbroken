@@ -3,7 +3,7 @@
 ## Notes: Plugin for Guild OS. A guild marketplace: "Looking for" (crafting orders, skilling calls, requests for items and services) and "Offering". Plus a message board and main/offspec for every character.
 ## Notes-deDE: Plugin für Guild OS. Ein Marktplatz für die Gilde: Suche (Handwerksaufträge, Skill-Aufrufe, gesuchte Items und Dienste) und Biete. Dazu eine Pinnwand und Main-/Offspec für jeden Charakter.
 ## Author: Christian
-## Version: 2.3.2
+## Version: 2.3.3
 ## Dependencies: GuildOS
 ## SavedVariables: GuildOSCraftOrdersDB
 ## X-Category: Guild
