@@ -1,6 +1,6 @@
 -- Main spec and offspec: every character says which of its class's talent trees it plays (and
 -- which it would play when needed). The guild sees it in Guild OS's roster tooltip.
--- Set with /gspec or the "My specs" button in the marketplace tab; synced like the board.
+-- Set in the "My Char" tab (or /gspec); synced like the board.
 --
 -- spec = { id = who, who, ms = main spec key, os = offspec key (optional), c, u, rev, ed }
 --                                                                    only `who` changes it
@@ -103,9 +103,8 @@ function ns.PurgeSpecs()
   end
 end
 
----------------------------------------------------------------- the small window
+---------------------------------------------------------------- the "My Char" tab
 local UI, C = GOS.UI, GOS.Colors
-local WHITE = "Interface\\Buttons\\WHITE8x8"
 local frame
 
 local function Paint()
@@ -120,42 +119,30 @@ local function Paint()
   end
 end
 
-local function Build()
+local function BuildPanel(panel)
   local class = ns.MyClass()
   local specs = ns.CLASS_SPECS[class] or {}
-  local f = CreateFrame("Frame", "GuildOSUnbrokenSpecs", UIParent, "BackdropTemplate")
-  local BW = 150
-  f:SetSize(math.max(3, #specs) * (BW + 4) + 80, 104)
-  f:SetPoint("CENTER")
-  f:SetFrameStrata("DIALOG")
-  f:SetClampedToScreen(true)
-  f:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-  local bg, line = C.popup or C.panel, C.lineHi or C.border
-  f:SetBackdropColor(bg.r, bg.g, bg.b, 0.97)
-  f:SetBackdropBorderColor(line.r, line.g, line.b, 1)
-  f:EnableMouse(true)
-  f:SetMovable(true)
-  f:RegisterForDrag("LeftButton")
-  f:SetScript("OnDragStart", f.StartMoving)
-  f:SetScript("OnDragStop", f.StopMovingOrSizing)
-  tinsert(UISpecialFrames, "GuildOSUnbrokenSpecs") -- Escape closes it
+  local BW = 160
+  frame = panel
 
-  local head = UI:CreateText(f, L.S_TITLE, 12, C.gold.r, C.gold.g, C.gold.b)
-  head:SetPoint("TOPLEFT", 10, -9)
-  local close = UI:CreateButton(f, "x", 18, 18)
-  close:SetPoint("TOPRIGHT", -5, -5)
-  close:SetScript("OnClick", function() f:Hide() end)
+  local head = UI:CreateText(panel, L.S_TITLE, 12, C.gold.r, C.gold.g, C.gold.b)
+  head:SetPoint("TOPLEFT", 10, -10)
+  local intro = UI:CreateText(panel, L.S_INTRO, 11, C.textDim.r, C.textDim.g, C.textDim.b)
+  intro:SetPoint("TOPLEFT", 10, -30)
+  intro:SetPoint("RIGHT", panel, "RIGHT", -22, 0)
+  intro:SetJustifyH("LEFT")
+  intro:SetWordWrap(true)
 
-  f.buttons = {}
+  panel.buttons = {}
   local function Row(rowKey, label, y, withNone)
-    local t = UI:CreateText(f, label, 11, C.text.r, C.text.g, C.text.b)
+    local t = UI:CreateText(panel, label, 11, C.text.r, C.text.g, C.text.b)
     t:SetPoint("TOPLEFT", 10, y - 4)
-    local x = 70
+    local x = 90
     local list = {}
     for _, s in ipairs(specs) do list[#list + 1] = { s.key, ns.SpecText(s.key) } end
     if withNone then list[#list + 1] = { "none", L.S_NONE } end
     for _, e in ipairs(list) do
-      local b = UI:CreateButton(f, e[2], BW, 20)
+      local b = UI:CreateButton(panel, e[2], BW, 22)
       b:SetPoint("TOPLEFT", x, y)
       b.row, b.key = rowKey, e[1]
       b:SetScript("OnClick", function()
@@ -169,27 +156,49 @@ local function Build()
         end
         Paint()
       end)
-      f.buttons[#f.buttons + 1] = b
+      panel.buttons[#panel.buttons + 1] = b
       x = x + BW + 4
     end
   end
-  Row("ms", L.S_MAIN, -32, false)
-  Row("os", L.S_OFF, -58, true)
+  Row("ms", L.S_MAIN, -60, false)
+  Row("os", L.S_OFF, -88, true)
   if #specs == 0 then
-    local t = UI:CreateText(f, L.S_NO_CLASS, 11, C.textDim.r, C.textDim.g, C.textDim.b)
-    t:SetPoint("TOPLEFT", 10, -40)
+    local t = UI:CreateText(panel, L.S_NO_CLASS, 11, C.textDim.r, C.textDim.g, C.textDim.b)
+    t:SetPoint("TOPLEFT", 10, -64)
   end
-  local hint = UI:CreateText(f, L.S_HINT, 10, C.textDim.r, C.textDim.g, C.textDim.b)
-  hint:SetPoint("BOTTOMLEFT", 10, 9)
-  f:Hide()
-  return f
+
+  -- what the guild sees
+  local seen = UI:CreateText(panel, "", 11, C.text.r, C.text.g, C.text.b)
+  seen:SetPoint("TOPLEFT", 10, -124)
+  seen:SetJustifyH("LEFT")
+  local function refresh()
+    if not panel:IsVisible() then return end
+    Paint()
+    local r = ns.SpecsOf(ns.Me())
+    if r then
+      seen:SetText(L.S_SEEN:format(ns.SpecText(r.ms) or "?", r.os and ns.SpecText(r.os) or L.S_NONE))
+    else
+      seen:SetText("|cff888888" .. L.S_NOT_SET .. "|r")
+    end
+  end
+  ns.OnChanged(refresh)
+  panel:HookScript("OnShow", function()
+    if ns.Start then ns.Start() end
+    GOS:SafeCall(refresh)
+  end)
+  GOS:SafeCall(refresh)
+  return refresh
 end
 
-function ns.ShowSpecs()
-  frame = frame or Build()
-  Paint()
-  frame:Show()
-end
+---------------------------------------------------------------- registration
+ns.MYCHAR_FEATURE = "mychar"
+UI:RegisterFeature({
+  id = ns.MYCHAR_FEATURE, label = L.S_TAB, desc = L.S_FEATURE_DESC, order = 50,
+  build = function(c) return BuildPanel(c) end,
+})
+
+function ns.ShowSpecs() UI:OpenWindow(ns.MYCHAR_FEATURE) end
 
 SLASH_GUILDOSSPEC1 = "/gspec"
+SLASH_GUILDOSSPEC2 = "/mychar"
 SlashCmdList.GUILDOSSPEC = function() ns.ShowSpecs() end

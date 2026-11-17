@@ -654,12 +654,6 @@ local function BuildTab(panel)
     f:Hide()
     subs[key] = f
   end
-  -- main / offspec (Specs.lua), top right
-  local specBtn = UI:CreateButton(panel, L.S_BUTTON, 110, SUB_H)
-  specBtn:SetPoint("TOPRIGHT", -22, -4)
-  specBtn:SetScript("OnClick", function() ns.ShowSpecs() end)
-  Tip(specBtn, L.S_TITLE, L.S_BUTTON_TT)
-
   subRefresh.seek = ns.BuildPanel(subs.seek)
   subRefresh.offer = ns.BuildMarketPanel(subs.offer)
   ns.OnChanged(function() if panel:IsVisible() then PaintSubs() end end)

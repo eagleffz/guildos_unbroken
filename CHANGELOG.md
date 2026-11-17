@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.0
+- Main spec and offspec moved into their own tab, **My Char** (`/gspec`, `/mychar`), which also shows what the guild sees.
+
 ## 2.2.0
 - **Main spec and offspec** for every character: set with the "My specs" button in the marketplace tab or `/gspec`, shown with the role in the Guild OS roster tooltip, synced across the guild. Druids pick Feral as tank or as damage.
 

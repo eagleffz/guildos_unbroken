@@ -113,11 +113,13 @@ local enUS = {
   SVC_lockpick = "Lockpicking", SVC_lockpick_TT = "Opening lockboxes and locked chests (rogues).",
   SVC_YOU_CAN = "you can do this", SVC_CAN_DO = "Can do it in the guild:",
   S_TITLE = "Main and offspec", S_MAIN = "Main spec", S_OFF = "Offspec", S_NONE = "none",
-  S_BUTTON = "My specs", S_BUTTON_TT = "Set the main spec and offspec of this character. The guild sees them in the Guild OS roster tooltip. Also /gspec.",
+  S_TAB = "My Char", S_FEATURE_DESC = "Your character for the guild: main spec and offspec (plugin)",
+  S_INTRO = "Which talent tree this character plays, and which it takes on when needed. The guild sees both in the Guild OS roster tooltip.",
+  S_SEEN = "The guild sees:  Main spec %s  ·  Offspec %s", S_NOT_SET = "Not set yet: pick your main spec above.",
   S_HINT = "Saved right away; the guild sees it in the roster tooltip.",
   S_MAIN_FIRST = "Pick the main spec first.", S_NO_CLASS = "No talent trees known for this class.",
   S_ROLE_T = "Tank", S_ROLE_H = "Healer", S_ROLE_D = "Damage",
-  S_LOGIN_HINT = "Tell the guild your main spec and offspec: /gspec",
+  S_LOGIN_HINT = "Tell the guild your main spec and offspec: tab \"My Char\" (/gspec)",
 }
 
 local deDE = {
@@ -232,11 +234,13 @@ local deDE = {
   SVC_lockpick = "Schlossknacken", SVC_lockpick_TT = "Schließkassetten und verschlossene Truhen öffnen (Schurken).",
   SVC_YOU_CAN = "das kannst du", SVC_CAN_DO = "Können das in der Gilde:",
   S_TITLE = "Main- und Offspec", S_MAIN = "Mainspec", S_OFF = "Offspec", S_NONE = "keine",
-  S_BUTTON = "Meine Specs", S_BUTTON_TT = "Main- und Offspec dieses Charakters eintragen. Die Gilde sieht sie im Roster-Tooltip von Guild OS. Auch /gspec.",
+  S_TAB = "My Char", S_FEATURE_DESC = "Dein Charakter für die Gilde: Main- und Offspec (Plugin)",
+  S_INTRO = "Welchen Talentbaum dieser Charakter spielt und welchen er bei Bedarf übernimmt. Die Gilde sieht beides im Roster-Tooltip von Guild OS.",
+  S_SEEN = "Die Gilde sieht:  Mainspec %s  ·  Offspec %s", S_NOT_SET = "Noch nicht eingetragen: wähle oben deine Mainspec.",
   S_HINT = "Wird sofort gespeichert; die Gilde sieht es im Roster-Tooltip.",
   S_MAIN_FIRST = "Bitte zuerst die Mainspec wählen.", S_NO_CLASS = "Für diese Klasse sind keine Talentbäume bekannt.",
   S_ROLE_T = "Tank", S_ROLE_H = "Heiler", S_ROLE_D = "Schaden",
-  S_LOGIN_HINT = "Sag der Gilde deine Main- und Offspec: /gspec",
+  S_LOGIN_HINT = "Sag der Gilde deine Main- und Offspec: Tab „My Char“ (/gspec)",
 }
 
 local L = setmetatable({}, { __index = function(_, k) return enUS[k] or k end })
