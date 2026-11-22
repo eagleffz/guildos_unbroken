@@ -116,6 +116,10 @@ local enUS = {
   S_MAIN_FIRST = "Pick the main spec first.", S_NO_CLASS = "No talent trees known for this class.",
   S_ROLE_T = "Tank", S_ROLE_H = "Healer", S_ROLE_D = "Damage",
   S_LOGIN_HINT = "Tell the guild your main spec and offspec: tab \"My Char\" (/gspec)",
+  K_TAB = "Keys", K_FEATURE_DESC = "Who has which endgame key and attunement (plugin)",
+  K_INTRO = "Keys and attunements, found by themselves (bags, key ring, bank once opened, quests).",
+  K_ONLINE = "Online only", K_MEMBER = "Member", K_HAVE_IT = "%d have it:", K_MORE = "... and %d more",
+  K_EMPTY = "Nobody yet. Members show up here once they run this plugin.",
 }
 
 local deDE = {
@@ -233,6 +237,10 @@ local deDE = {
   S_MAIN_FIRST = "Bitte zuerst die Mainspec wählen.", S_NO_CLASS = "Für diese Klasse sind keine Talentbäume bekannt.",
   S_ROLE_T = "Tank", S_ROLE_H = "Heiler", S_ROLE_D = "Schaden",
   S_LOGIN_HINT = "Sag der Gilde deine Main- und Offspec: Tab „My Char“ (/gspec)",
+  K_TAB = "Keys", K_FEATURE_DESC = "Wer welchen Endgame-Schlüssel und welche Einstimmung hat (Plugin)",
+  K_INTRO = "Schlüssel und Einstimmungen, von selbst erkannt (Taschen, Schlüsselbund, Bank nach dem Öffnen, Quests).",
+  K_ONLINE = "Nur online", K_MEMBER = "Mitglied", K_HAVE_IT = "%d haben es:", K_MORE = "... und %d weitere",
+  K_EMPTY = "Noch niemand. Mitglieder erscheinen hier, sobald sie dieses Plugin nutzen.",
 }
 
 local L = setmetatable({}, { __index = function(_, k) return enUS[k] or k end })

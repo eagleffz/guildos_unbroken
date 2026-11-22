@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.4.0
+- New tab "Keys": who in the guild has which endgame key (Shadowforge Key, Key to the City, Skeleton Key, Crescent Key, Seal of Ascension, Drakefire Amulet) and attunement (Molten Core, Blackwing Lair, Naxxramas). Found by itself in bags, key ring, bank and finished quests, and synced with the guild. `/gkeys` opens it.
+
 ## 2.3.3
 - Removed the in-game popup about a newer version (and `/gco version`). The version dot in the Guild OS roster stays.
 

@@ -137,6 +137,16 @@ local function ValidSpec(s, sender, relay)
   return true
 end
 
+-- keys: one record per character, only from that character; a list of known key names
+local function ValidKeys(s, sender, relay)
+  if type(s) ~= "table" or not SafeName(s.who) or s.ed ~= s.who or s.id ~= s.who then return false end
+  if type(s.ks) ~= "string" or #s.ks > 200 or not s.ks:match("^[%a,]*$") then return false end
+  local soon = time() + ns.DAY
+  if not Num(s.c, 0, soon) or not Num(s.u, 0, soon) or not Num(s.rev, 0, 1e6) then return false end
+  if not relay and s.who ~= sender then return false end
+  return true
+end
+
 local function TooMany(store, by)
   local n = 0
   for _, o in pairs(store) do
@@ -214,14 +224,24 @@ function ns.SendHello(force)
     specs = {}
     for id, s in pairs(g.specs) do specs[id] = s.rev or 0 end
   end
+  local keys
+  if ns.KeyStore and ns.KeyStore() then
+    keys = {}
+    for id, s in pairs(g.keys) do keys[id] = s.rev or 0 end
+  end
   -- oe = false: my orders are switched off, so my empty list says nothing about what I lack
   Send({ k = "H", o = have, oe = ns.Enabled() and true or false, m = offers, w = wants,
-         b = posts, r = replies, sp = specs, ver = ns.VERSION })
+         b = posts, r = replies, sp = specs, ks = keys, ver = ns.VERSION })
 end
 
 function ns.SendSpec(s)
   Heard("T:" .. s.id, s.rev)
   Send({ k = "T", o = s })
+end
+
+function ns.SendKeys(s)
+  Heard("K:" .. s.id, s.rev)
+  Send({ k = "K", o = s })
 end
 
 function ns.SendPost(p)
@@ -301,6 +321,9 @@ local RECORDS = {
   T = { valid = ValidSpec, author = "who", store = function() local g = ns.SpecStore(); return g and g.specs end,
         on = function(...) ns.OnSpecChanged(...) end,
         fields = { "id", "who", "ms", "os", "c", "u", "rev", "ed" } },
+  K = { valid = ValidKeys, author = "who", store = function() local g = ns.KeyStore(); return g and g.keys end,
+        on = function(...) ns.OnKeysChanged(...) end,
+        fields = { "id", "who", "ks", "c", "u", "rev", "ed" } },
 }
 
 function ns.RecordNewer(a, b)
@@ -360,6 +383,9 @@ local function OnHello(msg)
   if type(msg.sp) == "table" and ns.SpecStore() then
     newer = Compare(g.specs, msg.sp, "T", function() return true end) or newer
   end
+  if type(msg.ks) == "table" and ns.KeyStore() then
+    newer = Compare(g.keys, msg.ks, "K", function() return true end) or newer
+  end
   if newer then C_Timer.After(2 + math.random() * 4, function() ns.SendHello() end) end
 end
 
@@ -375,6 +401,7 @@ comm:RegisterComm(PREFIX, function(_, text, dist, sender)
     elseif msg.k == "M" or msg.k == "W" then if ns.MarketEnabled() then OnRecord(msg, sender, msg.k) end
     elseif msg.k == "B" or msg.k == "R" then if ns.BoardEnabled() then OnRecord(msg, sender, msg.k) end
     elseif msg.k == "T" then OnRecord(msg, sender, "T")
+    elseif msg.k == "K" then OnRecord(msg, sender, "K")
     elseif msg.k == "H" then OnHello(msg) end
   end)
 end)
@@ -399,6 +426,7 @@ local function Start(tries)
   ns.PurgeMarket()
   ns.PurgeBoard()
   ns.PurgeSpecs()
+  ns.PurgeKeys()
   C_Timer.After(5, function() ns.SendHello(true) end)
   -- after the guild had time to answer
   C_Timer.After(25, function()

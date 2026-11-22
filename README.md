@@ -45,6 +45,17 @@ Jeder Charakter trägt ein, welchen Talentbaum seiner Klasse er spielt (**Mainsp
 - **Anzeigen:** Im Roster von Guild OS steht im Tooltip jedes Mitglieds seine Main- und Offspec mit Rollen-Symbol und Rolle (Tank, Heiler, Schaden).
 - Wird automatisch mit allen Gildenmitgliedern abgeglichen, die das Plugin haben.
 
+## Keys (Tab „Keys“)
+
+Eine Tabelle: wer in der Gilde welchen Endgame-Schlüssel und welche Einstimmung hat. Erkannt werden:
+
+- **Schlüssel:** Schattenschmiedeschlüssel (BRD), Schlüssel zur Stadt (Strat), Skelettschlüssel (Scholo), Mondsichelschlüssel (DM), Siegel des Aufstiegs (UBRS), Drachenfeueramulett (Ony)
+- **Einstimmungen:** Geschmolzener Kern (MC), Pechschwingenhort (BWL), Naxxramas (Naxx)
+
+- Nichts eintragen: Das Plugin schaut selbst in Taschen, Schlüsselbund und Bank (die Bank zählt, sobald du sie einmal geöffnet hast) und in die abgeschlossenen Einstimmungs-Quests. Einmal gefunden, bleibt ein Schlüssel eingetragen.
+- Über jedem Schlüssel steht, wie viele ihn haben; der Tooltip zeigt den Gegenstand und alle Namen. „Nur online“ blendet Offline-Mitglieder aus.
+- Wird automatisch mit allen Gildenmitgliedern abgeglichen, die das Plugin haben. `/gkeys` öffnet den Tab.
+
 ## Pinnwand (Tab „Pinnwand“)
 
 Ein Schwarzes Brett für die Gilde:
@@ -74,6 +85,7 @@ Ein Schwarzes Brett für die Gilde:
 - `/gco` oder `/craftorders` öffnet den Marktplatz bei „Suche“, `/gmarkt` bei „Biete“; alternativ `/gos open craftorders` oder direkt im Guild-OS-Fenster.
 - `/gboard` oder `/pinnwand` öffnet die Pinnwand, alternativ `/gos open board`.
 - `/gspec` oder `/mychar` öffnet den Tab „My Char“, alternativ `/gos open mychar`.
+- `/gkeys` öffnet den Tab „Keys“, alternativ `/gos open keys`.
 - Ein- und ausschalten lässt sich das Plugin in den **Guild-OS-Einstellungen**.
 - Einträge sehen nur Gildenmitglieder, die das Plugin ebenfalls installiert haben.
 
