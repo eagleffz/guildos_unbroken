@@ -33,6 +33,25 @@ for i, k in ipairs(LIST) do
   ns.KEY_BY[e.key] = e
 end
 
+-- the three gems for the Seal of Ascension (from Omokk, Voone and Wyrmthalak in Lower Blackrock
+-- Spire): no columns of their own, the UBRS cell shows them for whoever has no seal yet
+local GEMS = {
+  { "gspire", "Gemstone of Spirestone",  "Highlord Omokk",       "Hochlord Omokk",          item = 12336 },
+  { "gsmold", "Gemstone of Smolderthorn", "War Master Voone",    "Kriegsherr Voone",        item = 12335 },
+  { "gblood", "Gemstone of Bloodaxe",    "Overlord Wyrmthalak",  "Oberanführer Wyrmthalak", item = 12337 },
+}
+ns.UBRS_GEMS = {}
+for i, k in ipairs(GEMS) do
+  local e = { key = k[1], name = k[2], boss = de and k[4] or k[3], item = k.item, order = 100 + i }
+  ns.UBRS_GEMS[i] = e
+  ns.KEY_BY[e.key] = e
+end
+
+-- every thing that is looked for: keys and gems
+local ALL = {}
+for _, e in ipairs(ns.KEYS) do ALL[#ALL + 1] = e end
+for _, e in ipairs(ns.UBRS_GEMS) do ALL[#ALL + 1] = e end
+
 -- the item's own (localized) name once the client knows it
 function ns.KeyName(e)
   if e.item and GetItemInfo then
@@ -109,12 +128,12 @@ function ns.ScanKeys()
   local r = g.keys[me]
   local set = ns.KeySet(r)
   local changed = false
-  for _, e in ipairs(ns.KEYS) do
+  for _, e in ipairs(ALL) do
     if not set[e.key] and HasKey(e) then set[e.key], changed = true, true end
   end
   if r and not changed then return end
   local list = {}
-  for _, e in ipairs(ns.KEYS) do if set[e.key] then list[#list + 1] = e.key end end
+  for _, e in ipairs(ALL) do if set[e.key] then list[#list + 1] = e.key end end
   r = r or { id = me, who = me, c = time(), rev = 0 }
   r.ks = table.concat(list, ",")
   r.rev = (r.rev or 0) + 1
@@ -161,7 +180,39 @@ local UI, C = GOS.UI, GOS.Colors
 local WHITE = "Interface\\Buttons\\WHITE8x8"
 local YES = "|TInterface\\RaidFrame\\ReadyCheck-Ready:14:14|t"
 local NO = "|cff555555-|r"
-local NAME_W, ROW_H, HEAD_H, LIST_TOP = 150, 20, 40, -34
+local NAME_W, ROW_H, HEAD_H, LIST_TOP = 135, 20, 40, -34
+
+-- the gems as small icons: owned ones in color, missing ones dark
+local function GemIcon(e, have)
+  local path = ns.KeyIcon(e)
+  if have then return ("|T%s:13:13:0:0:64:64:5:59:5:59|t"):format(path) end
+  return ("|T%s:13:13:0:0:64:64:5:59:5:59:70:70:70|t"):format(path)
+end
+
+-- how many of the three gems a set holds
+local function GemCount(set)
+  local n = 0
+  for _, gem in ipairs(ns.UBRS_GEMS) do if set[gem.key] then n = n + 1 end end
+  return n
+end
+
+-- the UBRS cell for someone without the seal: the gems, or a dash when none
+local function GemCell(set)
+  if GemCount(set) == 0 then return nil end
+  local parts = {}
+  for i, gem in ipairs(ns.UBRS_GEMS) do parts[i] = GemIcon(gem, set[gem.key]) end
+  return table.concat(parts, "")
+end
+
+-- the gems in a tooltip: name, boss, have it or not
+local function GemLines(tt, set)
+  tt:AddLine(L.K_GEMS:format(GemCount(set)), 0.85, 0.66, 0.31)
+  for _, gem in ipairs(ns.UBRS_GEMS) do
+    local have = set[gem.key]
+    tt:AddDoubleLine(GemIcon(gem, have) .. " " .. ns.KeyName(gem), gem.boss,
+      have and 0.25 or 0.6, have and 0.9 or 0.6, have and 0.25 or 0.6, 0.6, 0.6, 0.6)
+  end
+end
 
 local function BuildPanel(panel)
   local onlineOnly = ns.db and ns.db.settings.keysOnline or false
@@ -184,7 +235,7 @@ local function BuildPanel(panel)
   local function ColW()
     local w = content:GetWidth()
     if not w or w < 200 then w = (panel:GetWidth() or 640) - 26 end
-    return math.max(36, math.floor((w - NAME_W) / #ns.KEYS))
+    return math.max(42, math.floor((w - NAME_W) / #ns.KEYS))
   end
 
   -- the head: one icon per key with its short name and how many have it
@@ -219,6 +270,22 @@ local function BuildPanel(panel)
       GameTooltip:AddLine(L.K_HAVE_IT:format(#who), 0.85, 0.66, 0.31)
       for n = 1, math.min(#who, 25) do GameTooltip:AddLine(ns.ColorName(who[n])) end
       if #who > 25 then GameTooltip:AddLine(L.K_MORE:format(#who - 25), 0.6, 0.6, 0.6) end
+      -- UBRS: who is on the way to the seal, with how many gems
+      if e.key == "ubrs" and g then
+        local way = {}
+        for name, r in pairs(g.keys) do
+          local set = ns.KeySet(r)
+          if not set.ubrs and GemCount(set) > 0 and ns.InGuild(name) then way[#way + 1] = { name, GemCount(set) } end
+        end
+        table.sort(way, function(a, b) if a[2] ~= b[2] then return a[2] > b[2] end return a[1] < b[1] end)
+        if #way > 0 then
+          GameTooltip:AddLine(" ")
+          GameTooltip:AddLine(L.K_GEMS_WAY, 0.85, 0.66, 0.31)
+          for n = 1, math.min(#way, 15) do
+            GameTooltip:AddDoubleLine(ns.ColorName(way[n][1]), way[n][2] .. "/3", 1, 1, 1, 1, 1, 1)
+          end
+        end
+      end
       GameTooltip:Show()
     end)
     c:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -250,6 +317,20 @@ local function BuildPanel(panel)
       t:SetJustifyH("CENTER")
       f.cells[c] = t
     end
+    -- hover over the UBRS cell: the gems, for whoever has no seal yet
+    local hit = CreateFrame("Frame", nil, f)
+    hit:SetHeight(ROW_H)
+    hit:EnableMouse(true)
+    hit:SetScript("OnEnter", function(self)
+      local set = f.set
+      if not set or set.ubrs or GemCount(set) == 0 then return end
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:AddLine(f.who and ns.ColorName(f.who) or "", 1, 1, 1)
+      GemLines(GameTooltip, set)
+      GameTooltip:Show()
+    end)
+    hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    f.hit = hit
     rows[i] = f
     return f
   end
@@ -293,12 +374,19 @@ local function BuildPanel(panel)
       local nm = ns.ColorName(e.name)
       if e.name ~= me and not ns.IsOnline(e.name) then nm = "|cff777777" .. e.name .. "|r" end
       f.name:SetText(nm)
+      f.set, f.who = e.set, e.name
       for c, k in ipairs(ns.KEYS) do
         local t = f.cells[c]
         t:ClearAllPoints()
         t:SetPoint("CENTER", f, "LEFT", NAME_W + (c - 0.5) * cw, 0)
         local has = e.set[k.key]
-        t:SetText(has and YES or NO)
+        local gems = not has and k.key == "ubrs" and GemCell(e.set)
+        t:SetText(has and YES or gems or NO)
+        if k.key == "ubrs" then
+          f.hit:ClearAllPoints()
+          f.hit:SetPoint("LEFT", f, "LEFT", NAME_W + (c - 1) * cw, 0)
+          f.hit:SetWidth(cw)
+        end
         if has then counts[c] = counts[c] + 1 end
       end
       f:Show()

@@ -120,6 +120,7 @@ local enUS = {
   K_INTRO = "Keys and attunements, found by themselves (bags, key ring, bank once opened, quests).",
   K_ONLINE = "Online only", K_MEMBER = "Member", K_HAVE_IT = "%d have it:", K_MORE = "... and %d more",
   K_EMPTY = "Nobody yet. Members show up here once they run this plugin.",
+  K_GEMS = "Gems for the Seal of Ascension: %d/3", K_GEMS_WAY = "No seal yet, gems:",
 }
 
 local deDE = {
@@ -241,6 +242,7 @@ local deDE = {
   K_INTRO = "Schlüssel und Einstimmungen, von selbst erkannt (Taschen, Schlüsselbund, Bank nach dem Öffnen, Quests).",
   K_ONLINE = "Nur online", K_MEMBER = "Mitglied", K_HAVE_IT = "%d haben es:", K_MORE = "... und %d weitere",
   K_EMPTY = "Noch niemand. Mitglieder erscheinen hier, sobald sie dieses Plugin nutzen.",
+  K_GEMS = "Edelsteine für das Siegel des Aufstiegs: %d/3", K_GEMS_WAY = "Noch kein Siegel, Edelsteine:",
 }
 
 local L = setmetatable({}, { __index = function(_, k) return enUS[k] or k end })

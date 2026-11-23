@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.4.1
+- Keys: whoever has no Seal of Ascension yet shows the three gems in the UBRS column (Spirestone, Smolderthorn, Bloodaxe): owned in color, missing in grey. The cell tooltip names the missing ones and their boss; the UBRS header lists who is on the way with how many gems.
+
 ## 2.4.0
 - New tab "Keys": who in the guild has which endgame key (Shadowforge Key, Key to the City, Skeleton Key, Crescent Key, Seal of Ascension, Drakefire Amulet) and attunement (Molten Core, Blackwing Lair, Naxxramas). Found by itself in bags, key ring, bank and finished quests, and synced with the guild. `/gkeys` opens it.
 

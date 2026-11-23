@@ -51,6 +51,7 @@ Eine Tabelle: wer in der Gilde welchen Endgame-Schlüssel und welche Einstimmung
 
 - **Schlüssel:** Schattenschmiedeschlüssel (BRD), Schlüssel zur Stadt (Strat), Skelettschlüssel (Scholo), Mondsichelschlüssel (DM), Siegel des Aufstiegs (UBRS), Drachenfeueramulett (Ony)
 - **Einstimmungen:** Geschmolzener Kern (MC), Pechschwingenhort (BWL), Naxxramas (Naxx)
+- **UBRS-Edelsteine:** Wer das Siegel noch nicht hat, sieht in der UBRS-Spalte die drei Edelsteine (Felsspitz von Hochlord Omokk, Glutdorn von Kriegsherr Voone, Blutaxt von Oberanführer Wyrmthalak): vorhandene farbig, fehlende grau. Der Tooltip zeigt, welcher fehlt und wer ihn droppt.
 
 - Nichts eintragen: Das Plugin schaut selbst in Taschen, Schlüsselbund und Bank (die Bank zählt, sobald du sie einmal geöffnet hast) und in die abgeschlossenen Einstimmungs-Quests. Einmal gefunden, bleibt ein Schlüssel eingetragen.
 - Über jedem Schlüssel steht, wie viele ihn haben; der Tooltip zeigt den Gegenstand und alle Namen. „Nur online“ blendet Offline-Mitglieder aus.
