@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.4.2
+- Orders and marketplace entries (looking for / offering) of characters who left the guild are deleted, once the name has been missing from the guild roster for 5 minutes.
+
 ## 2.4.1
 - Keys: whoever has no Seal of Ascension yet shows the three gems in the UBRS column (Spirestone, Smolderthorn, Bloodaxe): owned in color, missing in grey. The cell tooltip names the missing ones and their boss; the UBRS header lists who is on the way with how many gems.
 

@@ -484,6 +484,7 @@ ev:SetScript("OnEvent", function(_, event, arg1)
       C_Timer.After(math.max(0, lastRoster + 5 - GetTime()), function()
         rosterQueued, lastRoster = false, GetTime()
         ns.ReadRoster()
+        ns.PurgeLeavers()
         ns.Changed()
       end)
     end
@@ -491,3 +492,7 @@ ev:SetScript("OnEvent", function(_, event, arg1)
 end)
 
 C_Timer.NewTicker(3600, function() ns.PurgeOrders(); ns.PurgeMarket(); ns.PurgeBoard(); ns.Changed() end)
+-- whoever left: checked again once their 5 minutes are up, even if the roster stays quiet
+C_Timer.NewTicker(60, function()
+  if ns.db and ns.PurgeLeavers() then ns.Changed() end
+end)

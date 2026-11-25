@@ -341,6 +341,37 @@ function ns.PurgeOrders()
   end
 end
 
+-- Members who left the guild: their orders and market entries go (and their "I want it"s).
+-- A roster can come in half read while the client still loads it, so a name has to be missing
+-- for 5 minutes first. Copies others still send are refused, see the sync.
+local missingSince = {}
+local function Left(who, now)
+  if not who or who == ns.Me() then return false end
+  if ns.roster[who] then missingSince[who] = nil; return false end
+  missingSince[who] = missingSince[who] or now
+  return now - missingSince[who] >= 300
+end
+
+function ns.PurgeLeavers()
+  local g = ns.G()
+  if not g or (ns.rosterCount or 0) == 0 then return false end
+  local now, gone = GetTime(), false
+  for id, o in pairs(g.orders) do
+    if Left(o.by, now) then g.orders[id] = nil; gone = true end
+  end
+  if g.offers then
+    for id, o in pairs(g.offers) do
+      if Left(o.by, now) then g.offers[id] = nil; gone = true end
+    end
+  end
+  if g.wants then
+    for id, w in pairs(g.wants) do
+      if Left(w.who, now) or (g.offers and not g.offers[w.o]) then g.wants[id] = nil; gone = true end
+    end
+  end
+  return gone
+end
+
 function ns.Whisper(who)
   if not who then return end
   if ChatFrame_SendTell then ChatFrame_SendTell(who)

@@ -33,6 +33,7 @@ Ein Formular für alles, was du brauchst. Das Plugin entscheidet selbst, was dar
 
 - Chat-Meldung und Popup bei jedem neuen Eintrag eines anderen, je Unter-Tab abschaltbar („Alle melden“/„Melden“, „Popup“). Das Popup ist verschiebbar, schließt sich nach 25 Sekunden und wartet im Kampf.
 - **Automatischer Abgleich** mit allen Gildenmitgliedern, die das Plugin nutzen, auch mit denen, die gerade offline waren.
+- **Gildenaustritt:** Verlässt ein Charakter die Gilde, verschwinden seine Aufträge und Marktplatz-Einträge (sobald er 5 Minuten nicht mehr im Gilden-Roster steht).
 - **Alle Items im Eingabefeld:** Die Liste baut sich nach dem ersten Login einmal langsam im Hintergrund auf (nicht im Kampf, nicht in Instanzen; etwa 10–20 Minuten) und wird gespeichert.
 - **Versions-Marker im Guild-OS-Roster:** ein zweiter Punkt für dieses Plugin – lila = aktuell, rot = veraltet.
 - Deutsch und Englisch.
