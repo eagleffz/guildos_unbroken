@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.0
+- Updated for Guild OS 2: the tabs sit in Guild OS's rooms (Marketplace in Workshop, Board in Salão, My Char in Members, Keys in Raids).
+- The version dot in the roster sits after the name and Guild OS's own marks again (it was gone with Guild OS 2).
+- Main/offspec and version also show on a roster card kept open with Shift-click.
+
 ## 2.4.2
 - Orders and marketplace entries (looking for / offering) of characters who left the guild are deleted, once the name has been missing from the guild roster for 5 minutes.
 

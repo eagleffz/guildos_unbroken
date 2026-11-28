@@ -35,7 +35,7 @@ Ein Formular für alles, was du brauchst. Das Plugin entscheidet selbst, was dar
 - **Automatischer Abgleich** mit allen Gildenmitgliedern, die das Plugin nutzen, auch mit denen, die gerade offline waren.
 - **Gildenaustritt:** Verlässt ein Charakter die Gilde, verschwinden seine Aufträge und Marktplatz-Einträge (sobald er 5 Minuten nicht mehr im Gilden-Roster steht).
 - **Alle Items im Eingabefeld:** Die Liste baut sich nach dem ersten Login einmal langsam im Hintergrund auf (nicht im Kampf, nicht in Instanzen; etwa 10–20 Minuten) und wird gespeichert.
-- **Versions-Marker im Guild-OS-Roster:** ein zweiter Punkt für dieses Plugin – lila = aktuell, rot = veraltet.
+- **Versions-Marker im Guild-OS-Roster:** ein kleiner Punkt hinter dem Namen und den Zeichen von Guild OS – lila = aktuell, rot = veraltet.
 - Deutsch und Englisch.
 
 ## My Char (Tab „My Char“)
@@ -84,6 +84,7 @@ Ein Schwarzes Brett für die Gilde:
 
 ## Benutzung
 
+- In Guild OS 2 liegen die Tabs in den Räumen: **Marktplatz** in der Werkstatt, **Pinnwand** im Salão, **My Char** bei den Mitgliedern, **Keys** bei den Raids. Ältere Guild-OS-Versionen zeigen sie wie bisher als eigene Tabs.
 - `/gco` oder `/craftorders` öffnet den Marktplatz bei „Suche“, `/gmarkt` bei „Biete“; alternativ `/gos open craftorders` oder direkt im Guild-OS-Fenster.
 - `/gboard` oder `/pinnwand` öffnet die Pinnwand, alternativ `/gos open board`.
 - `/gspec` oder `/mychar` öffnet den Tab „My Char“, alternativ `/gos open mychar`.

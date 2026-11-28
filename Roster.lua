@@ -1,4 +1,4 @@
--- A second marker in the Guild OS roster, next to Guild OS's own version dot: who runs this
+-- A marker in the Guild OS roster, after the name and Guild OS's own marks: who runs this
 -- plugin, and on which version. Purple = same or newer than mine, red = older. The row
 -- tooltip names the version.
 -- Versions come with every message of this plugin (and an answer to each hello), and are
@@ -54,22 +54,47 @@ local function MemberName(data)
 end
 
 ---------------------------------------------------------------- the marker
+-- Guild OS 2 draws its marks after the name (its crest, the founder's banner): ours is a small
+-- dot after the last of them. Older Guild OS had a dot of its own at the end of the name cell.
+local MARK_W = 22 -- a Guild OS mark (18) and its gap (4)
+local DOT_ROOM = 10
+
+local function PlaceDot(row)
+  local dot = row.gcoDot
+  if not dot then return end
+  dot:ClearAllPoints()
+  if row.marks then
+    local n = row.markKinds and #row.markKinds or 0
+    dot:SetPoint("LEFT", row.nameText, "RIGHT", 4 + n * MARK_W, 0)
+  elseif row.addonDot then
+    dot:SetPoint("RIGHT", row.addonDot, "LEFT", -3, 0)
+  end
+  dot:SetShown(row.__gcoVer ~= nil and row.nameText:IsShown() and row.nameShown ~= false)
+end
+
 local function Marker(row)
   if row.gcoDot then return row.gcoDot end
   local dot = row:CreateTexture(nil, "OVERLAY")
   dot:SetSize(6, 6)
-  dot:SetTexture("Interface\\Buttons\\WHITE8x8")
-  -- left of Guild OS's dot: that one sits at the very end of the name column
-  dot:SetPoint("RIGHT", row.addonDot, "LEFT", -3, 0)
+  dot:SetTexture("Interface\Buttons\WHITE8x8")
   dot:Hide()
   row.gcoDot = dot
-  -- make room for it: the name gets a little narrower after each column layout
-  if row.ApplyColumns then
+  if row.FitName then
+    -- Guild OS 2: the name takes what the marks leave; leave room for ours too
+    hooksecurefunc(row, "FitName", function(self)
+      if self.__gcoVer then
+        local room = math.max(20, (self.nameMax or 100) - (self.markKinds and #self.markKinds or 0) * MARK_W - DOT_ROOM)
+        if (self.nameText:GetWidth() or 0) > room then self.nameText:SetWidth(room) end
+      end
+      PlaceDot(self)
+    end)
+  elseif row.ApplyColumns and row.addonDot then
+    -- older Guild OS: the name gets a little narrower after each column layout
     hooksecurefunc(row, "ApplyColumns", function(self)
       if self.nameText:IsShown() then
         self.nameText:SetWidth(math.max(20, self.nameText:GetWidth() - 9))
       end
-      if self.gcoDot then self.gcoDot:SetShown(self.__gcoVer ~= nil and self.nameText:IsShown()) end
+      PlaceDot(self)
     end)
     local w = row.nameText:GetWidth()
     if w and w > 29 then row.nameText:SetWidth(w - 9) end
@@ -78,50 +103,55 @@ local function Marker(row)
 end
 
 local function UpdateRow(row, data)
-  if not row or not data or not row.addonDot or not row.nameText then return end
+  if not row or not data or not row.nameText or not (row.marks or row.addonDot) then return end
   local ver = ns.Enabled() and ns.PeerVersion(MemberName(data)) or nil
+  local had = row.__gcoVer
   row.__gcoVer = ver
   local dot = Marker(row)
-  if not ver or not row.nameText:IsShown() then dot:Hide() return end
-  local old = ns.CompareVersions(ver, ns.VERSION) < 0
-  local col = old and C.red or nil
-  if col then dot:SetVertexColor(col.r, col.g, col.b, 0.9)
-  else dot:SetVertexColor(PURPLE[1], PURPLE[2], PURPLE[3], 0.9) end
-  dot:Show()
+  if ver then
+    local old = ns.CompareVersions(ver, ns.VERSION) < 0
+    local col = old and C.red or nil
+    if col then dot:SetVertexColor(col.r, col.g, col.b, 0.9)
+    else dot:SetVertexColor(PURPLE[1], PURPLE[2], PURPLE[3], 0.9) end
+  end
+  -- Guild OS fitted the name before we knew: fit it again when ours comes or goes
+  if row.FitName and (had ~= nil) ~= (ver ~= nil) then row:FitName() end
+  PlaceDot(row)
 end
 
-local function AddTooltip(row)
+local function AddTooltip(row, tip, locked)
+  tip = tip or GameTooltip
   local data = row and row.memberData
-  if not data or not GameTooltip:IsShown() then return end
+  if not data or data.allied then return end
+  if not locked and not tip:IsShown() then return end
   local name = MemberName(data)
   -- main / offspec, whenever the member set them
   local s = ns.SpecsOf and ns.SpecsOf(name)
   local ver = ns.Enabled() and ns.PeerVersion(name)
-  if s or ver then GameTooltip:AddLine(" ") end
+  if not s and not ver then return end
+  tip:AddLine(" ")
   if s then
-    GameTooltip:AddDoubleLine(L.S_MAIN, ns.SpecText(s.ms) or "?", 0.85, 0.66, 0.31, 1, 1, 1)
-    if s.os then GameTooltip:AddDoubleLine(L.S_OFF, ns.SpecText(s.os) or "?", 0.85, 0.66, 0.31, 1, 1, 1) end
+    tip:AddDoubleLine(L.S_MAIN, ns.SpecText(s.ms) or "?", 0.85, 0.66, 0.31, 1, 1, 1)
+    if s.os then tip:AddDoubleLine(L.S_OFF, ns.SpecText(s.os) or "?", 0.85, 0.66, 0.31, 1, 1, 1) end
   end
-  if not ver then
-    if s then GameTooltip:Show() end
-    return
+  if ver then
+    if ns.CompareVersions(ver, ns.VERSION) < 0 then
+      tip:AddLine(L.ROSTER_VER_OLD:format(ver), C.red.r, C.red.g, C.red.b)
+    else
+      tip:AddLine(L.ROSTER_VER:format(ver), PURPLE[1], PURPLE[2], PURPLE[3])
+    end
   end
-  local old = ns.CompareVersions(ver, ns.VERSION) < 0
-  if old then
-    GameTooltip:AddLine(L.ROSTER_VER_OLD:format(ver), C.red.r, C.red.g, C.red.b)
-  else
-    GameTooltip:AddLine(L.ROSTER_VER:format(ver), PURPLE[1], PURPLE[2], PURPLE[3])
-  end
-  GameTooltip:Show()
+  tip:Show()
 end
 
 -- Guild OS's roster draws each row through these two global functions
+-- (ShowRowTooltip(row, tip, locked) since Guild OS 2: `tip` may be a card kept open)
 local function Hook()
   if type(UpdateRosterRow) == "function" then
     hooksecurefunc("UpdateRosterRow", function(row, data) GuildOS:SafeCall(UpdateRow, row, data) end)
   end
   if type(ShowRowTooltip) == "function" then
-    hooksecurefunc("ShowRowTooltip", function(row) GuildOS:SafeCall(AddTooltip, row) end)
+    hooksecurefunc("ShowRowTooltip", function(row, tip, locked) GuildOS:SafeCall(AddTooltip, row, tip, locked) end)
   end
 end
 

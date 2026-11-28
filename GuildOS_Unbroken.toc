@@ -3,7 +3,7 @@
 ## Notes: Plugin for Guild OS. A guild marketplace: "Looking for" (crafting orders, skilling calls, requests for items and services) and "Offering". Plus a message board, main/offspec for every character and who has which endgame key.
 ## Notes-deDE: Plugin für Guild OS. Ein Marktplatz für die Gilde: Suche (Handwerksaufträge, Skill-Aufrufe, gesuchte Items und Dienste) und Biete. Dazu eine Pinnwand, Main-/Offspec für jeden Charakter und wer welche Endgame-Schlüssel hat.
 ## Author: Christian
-## Version: 2.4.2
+## Version: 2.5.0
 ## Dependencies: GuildOS
 ## SavedVariables: GuildOSCraftOrdersDB
 ## X-Category: Guild
@@ -23,3 +23,4 @@ Roster.lua
 UI.lua
 MarketUI.lua
 BoardUI.lua
+Rooms.lua
