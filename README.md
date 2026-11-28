@@ -35,7 +35,7 @@ Ein Formular für alles, was du brauchst. Das Plugin entscheidet selbst, was dar
 - **Automatischer Abgleich** mit allen Gildenmitgliedern, die das Plugin nutzen, auch mit denen, die gerade offline waren.
 - **Gildenaustritt:** Verlässt ein Charakter die Gilde, verschwinden seine Aufträge und Marktplatz-Einträge (sobald er 5 Minuten nicht mehr im Gilden-Roster steht).
 - **Alle Items im Eingabefeld:** Die Liste baut sich nach dem ersten Login einmal langsam im Hintergrund auf (nicht im Kampf, nicht in Instanzen; etwa 10–20 Minuten) und wird gespeichert.
-- **Versions-Marker im Guild-OS-Roster:** ein kleiner Punkt hinter dem Namen und den Zeichen von Guild OS – lila = aktuell, rot = veraltet.
+- **Versions-Zeichen im Guild-OS-Roster:** eine Münze im Ring, rechtsbündig neben den Zeichen von Guild OS – lila = aktuell, rot = veraltet. Der Tooltip nennt die Version.
 - Deutsch und Englisch.
 
 ## My Char (Tab „My Char“)

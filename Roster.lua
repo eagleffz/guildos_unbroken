@@ -54,47 +54,109 @@ local function MemberName(data)
 end
 
 ---------------------------------------------------------------- the marker
--- Guild OS 2 draws its marks after the name (its crest, the founder's banner): ours is a small
--- dot after the last of them. Older Guild OS had a dot of its own at the end of the name cell.
-local MARK_W = 22 -- a Guild OS mark (18) and its gap (4)
-local DOT_ROOM = 10
+-- Guild OS 2 draws round marks after the name (its crest, the founder's banner). Ours is a mark of
+-- the same size: a coin in a ring, purple = same version or newer, red = older. The name stays on
+-- the left and all marks, Guild OS's and ours, line up on the right of the name cell.
+-- Older Guild OS (a dot of its own at the end of the name cell): a small dot next to it.
+local WHITE = "Interface\\Buttons\\WHITE8x8"
+local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+local COIN = "Interface\\Icons\\INV_Misc_Coin_02"
+local SIZE, GAP = 18, 4
 
-local function PlaceDot(row)
-  local dot = row.gcoDot
-  if not dot then return end
-  dot:ClearAllPoints()
-  if row.marks then
-    local n = row.markKinds and #row.markKinds or 0
-    dot:SetPoint("LEFT", row.nameText, "RIGHT", 4 + n * MARK_W, 0)
-  elseif row.addonDot then
-    dot:SetPoint("RIGHT", row.addonDot, "LEFT", -3, 0)
+local function Round(tex)
+  if tex.SetMask then pcall(tex.SetMask, tex, ROUND) end
+end
+
+local function TextW(fs)
+  local w = fs.GetUnboundedStringWidth and fs:GetUnboundedStringWidth() or fs:GetStringWidth()
+  return math.ceil(w or 0)
+end
+
+local function ShowMarkTip(m)
+  local row = m:GetParent()
+  local ver = row and row.__gcoVer
+  if not ver then return end
+  GameTooltip:SetOwner(m, "ANCHOR_RIGHT")
+  if ns.CompareVersions(ver, ns.VERSION) < 0 then
+    GameTooltip:SetText(L.ROSTER_VER_OLD:format(ver), C.red.r, C.red.g, C.red.b)
+  else
+    GameTooltip:SetText(L.ROSTER_VER:format(ver), PURPLE[1], PURPLE[2], PURPLE[3])
   end
-  dot:SetShown(row.__gcoVer ~= nil and row.nameText:IsShown() and row.nameShown ~= false)
+  GameTooltip:Show()
+end
+
+local function NewMark(row)
+  local m = CreateFrame("Button", nil, row)
+  m:SetSize(SIZE, SIZE)
+  m.ring = m:CreateTexture(nil, "ARTWORK")
+  m.ring:SetAllPoints()
+  m.ring:SetTexture(WHITE)
+  Round(m.ring)
+  m.icon = m:CreateTexture(nil, "OVERLAY")
+  m.icon:SetPoint("CENTER")
+  m.icon:SetSize(SIZE - 4, SIZE - 4)
+  m.icon:SetTexture(COIN)
+  m.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  Round(m.icon)
+  m:SetScript("OnEnter", ShowMarkTip)
+  m:SetScript("OnLeave", function() GameTooltip:Hide() end)
+  -- a click on the mark is a click on the row, as with Guild OS's marks
+  m:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  m:SetScript("OnClick", function(_, button)
+    local fn = row:GetScript("OnClick")
+    if fn then fn(row, button) end
+  end)
+  m:Hide()
+  return m
+end
+
+-- Guild OS 2: name on the left, the marks right-aligned at the end of the name cell
+local function Layout(row)
+  local name = row.nameText
+  local icons = {}
+  for i, m in ipairs(row.marks) do
+    if row.markKinds and row.markKinds[i] then icons[#icons + 1] = m end
+  end
+  local mine = row.gcoMark
+  if mine then
+    if row.__gcoVer then icons[#icons + 1] = mine end
+    mine:SetShown(row.__gcoVer ~= nil and row.nameShown ~= false)
+  end
+  local max = row.nameMax or 100
+  -- the name starts 42 px into its cell and may run to 10 px before its end: marks end 2 px before
+  local x = max + 8
+  for i = #icons, 1, -1 do
+    local m = icons[i]
+    m:ClearAllPoints()
+    m:SetPoint("RIGHT", name, "LEFT", x, 0)
+    x = x - SIZE - GAP
+  end
+  local room = math.max(20, max - #icons * (SIZE + GAP))
+  name:SetWidth(math.max(1, math.min(TextW(name), room)))
 end
 
 local function Marker(row)
+  if row.marks and row.FitName then
+    if not row.gcoMark then
+      row.gcoMark = NewMark(row)
+      hooksecurefunc(row, "FitName", function(self) GuildOS:SafeCall(Layout, self) end)
+    end
+    return row.gcoMark
+  end
+  -- older Guild OS
   if row.gcoDot then return row.gcoDot end
   local dot = row:CreateTexture(nil, "OVERLAY")
   dot:SetSize(6, 6)
-  dot:SetTexture("Interface\Buttons\WHITE8x8")
+  dot:SetTexture(WHITE)
+  dot:SetPoint("RIGHT", row.addonDot, "LEFT", -3, 0)
   dot:Hide()
   row.gcoDot = dot
-  if row.FitName then
-    -- Guild OS 2: the name takes what the marks leave; leave room for ours too
-    hooksecurefunc(row, "FitName", function(self)
-      if self.__gcoVer then
-        local room = math.max(20, (self.nameMax or 100) - (self.markKinds and #self.markKinds or 0) * MARK_W - DOT_ROOM)
-        if (self.nameText:GetWidth() or 0) > room then self.nameText:SetWidth(room) end
-      end
-      PlaceDot(self)
-    end)
-  elseif row.ApplyColumns and row.addonDot then
-    -- older Guild OS: the name gets a little narrower after each column layout
+  if row.ApplyColumns then
     hooksecurefunc(row, "ApplyColumns", function(self)
       if self.nameText:IsShown() then
         self.nameText:SetWidth(math.max(20, self.nameText:GetWidth() - 9))
       end
-      PlaceDot(self)
+      self.gcoDot:SetShown(self.__gcoVer ~= nil and self.nameText:IsShown())
     end)
     local w = row.nameText:GetWidth()
     if w and w > 29 then row.nameText:SetWidth(w - 9) end
@@ -105,18 +167,19 @@ end
 local function UpdateRow(row, data)
   if not row or not data or not row.nameText or not (row.marks or row.addonDot) then return end
   local ver = ns.Enabled() and ns.PeerVersion(MemberName(data)) or nil
-  local had = row.__gcoVer
   row.__gcoVer = ver
-  local dot = Marker(row)
-  if ver then
-    local old = ns.CompareVersions(ver, ns.VERSION) < 0
-    local col = old and C.red or nil
-    if col then dot:SetVertexColor(col.r, col.g, col.b, 0.9)
-    else dot:SetVertexColor(PURPLE[1], PURPLE[2], PURPLE[3], 0.9) end
+  local m = Marker(row)
+  local r, g, b = PURPLE[1], PURPLE[2], PURPLE[3]
+  if ver and ns.CompareVersions(ver, ns.VERSION) < 0 then r, g, b = C.red.r, C.red.g, C.red.b end
+  if m == row.gcoMark then
+    m.ring:SetVertexColor(r, g, b, 1)
+    -- an offline member's row is grey: so is the coin
+    if m.icon.SetDesaturated then m.icon:SetDesaturated(not data.isOnline) end
+    Layout(row)
+  else
+    m:SetVertexColor(r, g, b, 0.9)
+    m:SetShown(ver ~= nil and row.nameText:IsShown())
   end
-  -- Guild OS fitted the name before we knew: fit it again when ours comes or goes
-  if row.FitName and (had ~= nil) ~= (ver ~= nil) then row:FitName() end
-  PlaceDot(row)
 end
 
 local function AddTooltip(row, tip, locked)

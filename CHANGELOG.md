@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.1
+- Fixed: in 2.5.0 the roster part did not load at all (a broken texture path), so neither the marker nor main/offspec showed in the roster tooltip.
+- The roster marker is now a round mark like Guild OS's own (a coin in a purple ring, red when outdated) with its own tooltip. The name stays left, all marks line up on the right of the name cell.
+
 ## 2.5.0
 - Updated for Guild OS 2: the tabs sit in Guild OS's rooms (Marketplace in Workshop, Board in Salão, My Char in Members, Keys in Raids).
 - The version dot in the roster sits after the name and Guild OS's own marks again (it was gone with Guild OS 2).
